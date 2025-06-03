@@ -1,9 +1,6 @@
 import { Router } from "express";
 import { loginController } from "../controllers/users.controllers.js";
-import { loginValidations } from "../utils/userValidations.js";
-
 const router = Router();
-
 /**
  * @swagger
  * /api/v1/users/login:
@@ -37,6 +34,6 @@ const router = Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post("/login",loginValidations, loginController);
-
+router.post("/login", loginController);
 export default router;
+//# sourceMappingURL=users.routes.js.map

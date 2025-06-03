@@ -2,14 +2,25 @@
 
 import { useState } from 'react';
 import "./login.css"
+import axios from 'axios';
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async(e: React.FormEvent) => {
     e.preventDefault()
-    
+    try {
+     const response =  await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/login`,{
+        email,password
+      });
+
+      const {token} = response.data;
+      
+      
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   return (
