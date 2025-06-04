@@ -12,11 +12,17 @@ import usersRoutes from "./routes/users.routes.js";
 const app = express();
 
 // implemented cors middleware 
-app.use(cors());
+app.use(cors({
+  origin: String(process.env.FRONTEND_URL),
+  credentials:true
+}));
+
 
 
 // implemented express.json middleware to convert all the request into json format
 app.use(express.json());
+
+app.use(express.urlencoded({extended:true}));
 
 // implemented morgan for logging
 app.use(morgan("dev"));
