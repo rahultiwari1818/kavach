@@ -18,9 +18,40 @@ export const loginValidations = (
       res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
       return;
     }
-    
+
     next();
   } catch (error) {
     console.log("Error Occured In Login Validations : ", error);
   }
 };
+
+
+export const registerValidations = (
+     req: Request,
+  res: Response,
+  next: NextFunction
+)=>{
+    try {
+    const { name,  email, password } = req.body;
+
+    
+    if (!name) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Name is required" });
+      return;
+    }
+
+    if (!email) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Email is required" });
+      return;
+    }
+    
+    if (!password) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.log("Error Occured In Register Validations : ", error);
+  }
+}
