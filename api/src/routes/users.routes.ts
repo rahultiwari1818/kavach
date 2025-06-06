@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { loginController } from "../controllers/users.controllers.js";
-import { loginValidations } from "../utils/userValidations.js";
+import { loginController, registerController, verifyEmail } from "../controllers/users.controllers.js";
+import { loginValidations, registerValidations } from "../utils/userValidations.js";
+import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
 
 const router = Router();
 
@@ -38,5 +39,14 @@ const router = Router();
  *         description: Invalid credentials
  */
 router.post("/login",loginValidations, loginController);
+
+
+
+router.post("/register",registerValidations,verifyOTPMiddleware,registerController);
+
+
+router.post("/verify-email",verifyEmail);
+
+
 
 export default router;

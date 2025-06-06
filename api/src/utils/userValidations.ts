@@ -32,7 +32,7 @@ export const registerValidations = (
   next: NextFunction
 )=>{
     try {
-    const { name,  email, password } = req.body;
+    const { name,  email, password,otp } = req.body;
 
     
     if (!name) {
@@ -49,6 +49,13 @@ export const registerValidations = (
       res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
       return;
     }
+
+    
+    if (!otp) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      return;
+    }
+
 
     next();
   } catch (error) {

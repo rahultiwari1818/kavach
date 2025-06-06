@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import User from "../models/users.model.js";
 import { ResponseCode } from "../utils/responseCode.enum.js";
-import { comparePassword, generateOTP } from "../utils/utils.js";
+import { comparePassword, hashPassword } from "../utils/utils.js";
 import { generateToken } from "../utils/webTokenUtils.js";
-import { client } from "../config/redis.config.js";
-import { sendMail } from "../config/mail.config.js";
+import { sendOTP } from "../utils/otpUtils.js";
+
 
 export const loginController = async (
   req: Request,
@@ -54,12 +54,76 @@ export const loginController = async (
   }
 };
 
+export const verifyEmail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Email is required" });
+      return;
+    }
+
+    const userExist = await doesUserAlreadyExist(email);
+    if (userExist) {
+      res.status(ResponseCode.CONFLICT).json({
+        message: "User with this email already exists",
+      });
+    }
+
+    const isOtpSent = await sendOTP(email);
+
+    if (isOtpSent) {
+      res.status(ResponseCode.SUCCESS).json({
+        message: "OTP sent successfully",
+      });
+      return;
+    } else {
+      res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+        message: "Error Occured While sending OTP!",
+      });
+      return;
+    }
+  } catch (error) {
+    console.error("Email Verification Error:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error" });
+  }
+};
+
 export const registerController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
+    const { email, name, password } = req.body;
+    const hashedPassword = await hashPassword(password);
 
+    const newUser = new User({
+      name,
+      email,
+      role:"public",
+      password: hashedPassword,
+    });
+
+    await newUser.save();
+
+    const token = generateToken({ email, _id: newUser._id });
+
+    res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+    });
+
+    res.status(ResponseCode.CREATED).json({
+      message: "User registered successfully.",
+    });
   } catch (error) {
     console.error("Register Error:", error);
     res
@@ -77,26 +141,10 @@ export const registerController = async (
 export const doesUserAlreadyExist = async (email: string): Promise<Boolean> => {
   try {
     const user = await User.findOne({ email: email });
-
-    return user != undefined ? false : true;
+    return user == null ? false : true;
   } catch (error) {
     console.error(" Error while checking doesUserAlreadyExist:", error);
     return true;
   }
 };
 
-export const sendOTP = async (email: string): Promise<Boolean> => {
-  try {
-    const otp: string = generateOTP();
-    await client.set(email, otp);
-    const resp = await sendMail(
-      email,
-      "Verification OTP",
-      `Your OTP is ${otp}`
-    );
-    return resp;
-  } catch (error) {
-    console.error(" Error while Sending OTP :", error);
-    return false;
-  }
-};
