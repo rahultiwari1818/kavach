@@ -7,8 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.js",
     "build": "tsc",
-    "start":" node dist/server.js"
-
+    "start": " node dist/server.js"
   },
   "author": "Rahul Tiwari",
   "license": "ISC",
@@ -34,7 +33,7 @@
     "@types/express": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",
-    "@types/node": "^22.15.21",
+    "@types/node": "^22.15.30",
     "@types/nodemailer": "^6.4.17",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
