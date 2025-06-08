@@ -62,8 +62,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         toast.success("Registration successful!");
         router.push("/home");
       } catch (err) {
-        const error = err as AxiosError<{ message: string }>;
-        if (error.response) toast.error(error.response.data.message);
+            const error = err as AxiosError<{ message: string }>;
+            if (error.response) toast.error(error.response.data.message);
       }
     } else {
       // login logic

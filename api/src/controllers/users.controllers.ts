@@ -5,7 +5,6 @@ import { comparePassword, hashPassword } from "../utils/utils.js";
 import { generateToken } from "../utils/webTokenUtils.js";
 import { sendOTP } from "../utils/otpUtils.js";
 
-
 export const loginController = async (
   req: Request,
   res: Response
@@ -106,7 +105,7 @@ export const registerController = async (
     const newUser = new User({
       name,
       email,
-      role:"public",
+      role: "public",
       password: hashedPassword,
     });
 
@@ -132,9 +131,26 @@ export const registerController = async (
   }
 };
 
-
-
-
+export const logoutController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    res.status(ResponseCode.SUCCESS).json({
+      message: "Logout Successfully.!",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error" });
+  }
+};
 
 // ----------------------------------------------------------------------- Util Funcations for Controllers ----------------------------------------------------------------------------------
 
@@ -147,4 +163,3 @@ export const doesUserAlreadyExist = async (email: string): Promise<Boolean> => {
     return true;
   }
 };
-

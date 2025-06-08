@@ -1,0 +1,13 @@
+{
+  "name": "safehood",
+  "version": "1.0.0",
+  "description": "Kavach",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-prod-backend" :"cd api && npm install && npm run build",
+    "start-prod-frontend" :"cd frontend && npm install && npm run build"
+  },
+  "author": "",
+  "license": "ISC"
+}

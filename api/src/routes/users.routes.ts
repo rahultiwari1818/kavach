@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginController, registerController, verifyEmail } from "../controllers/users.controllers.js";
+import { loginController, logoutController, registerController, verifyEmail } from "../controllers/users.controllers.js";
 import { loginValidations, registerValidations } from "../utils/userValidations.js";
 import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
 
@@ -46,6 +46,9 @@ router.post("/register",registerValidations,verifyOTPMiddleware,registerControll
 
 
 router.post("/verify-email",verifyEmail);
+
+
+router.post("/logout",logoutController)
 
 
 

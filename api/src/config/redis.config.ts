@@ -19,6 +19,7 @@ export const connectToRedis = async () => {
   });
   client.on("error", (err) => {
     console.log(err, "redis");
+    process.exit();
   });
   await client.connect();
 };

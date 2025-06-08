@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { loginController } from "../controllers/users.controllers.js";
+import { loginController, registerController, verifyEmail } from "../controllers/users.controllers.js";
+import { loginValidations, registerValidations } from "../utils/userValidations.js";
+import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
 const router = Router();
 /**
  * @swagger
@@ -34,6 +36,8 @@ const router = Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post("/login", loginController);
+router.post("/login", loginValidations, loginController);
+router.post("/register", registerValidations, verifyOTPMiddleware, registerController);
+router.post("/verify-email", verifyEmail);
 export default router;
 //# sourceMappingURL=users.routes.js.map
