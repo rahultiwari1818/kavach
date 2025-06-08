@@ -1,7 +1,8 @@
 {
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist", //stores output files of ts files (js files)
+    "rootDir": "./src",
+    "outDir": "./dist", //stores output files of ts files (js files)
     "allowJs": true,
     "sourceMap": true
   },

@@ -108,6 +108,24 @@ export const registerController = async (req, res) => {
             .json({ message: "Internal Server Error" });
     }
 };
+export const logoutController = async (req, res) => {
+    try {
+        res.clearCookie("authToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+        });
+        res.status(ResponseCode.SUCCESS).json({
+            message: "Logout Successfully.!",
+        });
+    }
+    catch (error) {
+        console.error("Logout Error:", error);
+        res
+            .status(ResponseCode.INTERNAL_SERVER_ERROR)
+            .json({ message: "Internal Server Error" });
+    }
+};
 // ----------------------------------------------------------------------- Util Funcations for Controllers ----------------------------------------------------------------------------------
 export const doesUserAlreadyExist = async (email) => {
     try {

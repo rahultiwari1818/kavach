@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginController, registerController, verifyEmail } from "../controllers/users.controllers.js";
+import { loginController, logoutController, registerController, verifyEmail } from "../controllers/users.controllers.js";
 import { loginValidations, registerValidations } from "../utils/userValidations.js";
 import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
 const router = Router();
@@ -39,5 +39,6 @@ const router = Router();
 router.post("/login", loginValidations, loginController);
 router.post("/register", registerValidations, verifyOTPMiddleware, registerController);
 router.post("/verify-email", verifyEmail);
+router.post("/logout", logoutController);
 export default router;
 //# sourceMappingURL=users.routes.js.map
