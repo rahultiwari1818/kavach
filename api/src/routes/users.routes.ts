@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginController, logoutController, registerController, verifyEmail } from "../controllers/users.controllers.js";
+import { googleAuth, loginController, logoutController, registerController, verifyEmail } from "../controllers/users.controllers.js";
 import { loginValidations, registerValidations } from "../utils/userValidations.js";
 import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
 
@@ -50,6 +50,8 @@ router.post("/verify-email",verifyEmail);
 
 router.post("/logout",logoutController)
 
+
+router.post("/googleAuth",googleAuth);
 
 
 export default router;

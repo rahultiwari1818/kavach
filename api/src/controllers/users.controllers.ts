@@ -4,6 +4,9 @@ import { ResponseCode } from "../utils/responseCode.enum.js";
 import { comparePassword, hashPassword } from "../utils/utils.js";
 import { generateToken } from "../utils/webTokenUtils.js";
 import { sendOTP } from "../utils/otpUtils.js";
+import oauth2Client from "../config/googleAuth.config.js";
+import axios from "axios";
+
 
 export const loginController = async (
   req: Request,
@@ -26,6 +29,7 @@ export const loginController = async (
       const payload = {
         email: user.email,
         _id: user._id,
+        role:user.role
       };
 
       const token = generateToken(payload);
@@ -111,7 +115,7 @@ export const registerController = async (
 
     await newUser.save();
 
-    const token = generateToken({ email, _id: newUser._id });
+    const token = generateToken({ email, _id: newUser._id,role:newUser.role });
 
     res.cookie("authToken", token, {
       httpOnly: true,
@@ -146,6 +150,56 @@ export const logoutController = async (
     });
   } catch (error) {
     console.error("Logout Error:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error" });
+  }
+};
+
+
+
+export const googleAuth = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const code  = req.query.code;
+    const googleRes =  await oauth2Client.getToken(String(code || ""));
+    oauth2Client.setCredentials(googleRes.tokens);
+
+    const userRes = await axios.get(
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+    );
+    const { email, name } = userRes.data;
+    // console.log(userRes);
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        role:"public"
+      });
+    }
+    const token = generateToken({
+      _id: user._id,
+      email: user.email,
+      role:user.role
+    });
+
+     res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+    });
+
+    res.status(ResponseCode.SUCCESS).json({
+      message: "User Loggedin Successfully.!",
+      result: true,
+    });
+  } catch (err) {
+     console.error("Google Auth Error:", err);
     res
       .status(ResponseCode.INTERNAL_SERVER_ERROR)
       .json({ message: "Internal Server Error" });
