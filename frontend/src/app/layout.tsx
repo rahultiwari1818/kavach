@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ToastProvider from "@/context/ToastProvider";
 import NavbarWrapper from "@/components/Navbar/NavbarWrapper";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,18 +24,19 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) 
-{
-
-
+}>) {
   return (
-    <html >
+    <html>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ToastProvider>
-          <NavbarWrapper/>
-          {children}
+          <GoogleOAuthProvider
+            clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}
+          >
+            <NavbarWrapper />
+            {children}
+          </GoogleOAuthProvider>
         </ToastProvider>
       </body>
     </html>

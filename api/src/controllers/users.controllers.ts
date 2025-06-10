@@ -163,7 +163,7 @@ export const googleAuth = async (
   res: Response
 ): Promise<void> => {
   try {
-    const code  = req.query.code;
+    const code  = req.body.code;
     const googleRes =  await oauth2Client.getToken(String(code || ""));
     oauth2Client.setCredentials(googleRes.tokens);
 
@@ -181,7 +181,7 @@ export const googleAuth = async (
         role:"public"
       });
     }
-    const token = generateToken({
+    const token =  generateToken({
       _id: user._id,
       email: user.email,
       role:user.role

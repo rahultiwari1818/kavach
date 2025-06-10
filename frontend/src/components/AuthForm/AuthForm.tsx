@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import "./authform.css";
+import { useGoogleLogin } from "@react-oauth/google";
+import Image from "next/image";
 
 type AuthStep = "form" | "otp";
-type AuthMode = 'login' | 'register'
-
-
+type AuthMode = "login" | "register";
 
 interface AuthFormProps {
-  mode: AuthMode
+  mode: AuthMode;
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
@@ -62,8 +62,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         toast.success("Registration successful!");
         router.push("/home");
       } catch (err) {
-            const error = err as AxiosError<{ message: string }>;
-            if (error.response) toast.error(error.response.data.message);
+        const error = err as AxiosError<{ message: string }>;
+        if (error.response) toast.error(error.response.data.message);
       }
     } else {
       // login logic
@@ -83,6 +83,34 @@ export default function AuthForm({ mode }: AuthFormProps) {
       }
     }
   };
+
+  const googleAuth = (code: string) =>
+    axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/googleAuth?`,
+      {
+        code:code
+      },
+      { withCredentials: true }
+    );
+
+  const googleResponse = async (authResult: object) => {
+    try {
+      if ("code" in authResult) {
+        const code = (authResult as { code: string }).code;
+        await googleAuth(code);
+        router.push("/home");
+      }
+    } catch (error) {
+      console.log("Error While G Auth :", error);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: googleResponse,
+    onError: googleResponse,
+    flow: "auth-code",
+  });
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 relative">
       <div className="bg-image"></div>
@@ -129,7 +157,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             />
           </div>
 
-          {(mode === "login" || (mode === "register")) && (
+          {(mode === "login" || mode === "register") && (
             <div>
               <label
                 htmlFor="password"
@@ -178,6 +206,16 @@ export default function AuthForm({ mode }: AuthFormProps) {
               : "Sign In"}
           </button>
         </form>
+
+        <button
+          className="flex px-3 py-2 rounded-lg  my-2 w-full justify-around font-bold text-red-500 items-center gap-5 border border-red-500 bg-white"
+          onClick={googleLogin}
+        >
+          {mode === "register"
+            ? "SignUp Using Google "
+            : "SignIn Using Google "}
+          <Image src={"/GoogleIcon.png"} alt="google" width={20} height={20} />
+        </button>
 
         <p className="mt-6 text-center text-sm text-gray-600">
           {mode === "login" ? (
