@@ -3,26 +3,53 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('authToken')?.value;
+  const role = request.cookies.get('role')?.value;
   const pathname = request.nextUrl.pathname;
 
-  const protectedRoutes = ['/home', '/settings', '/profile'];
-  const publicRoutes = ['/', '/register'];
-
-  const isProtected = protectedRoutes.some((path) =>
-    pathname.startsWith(path)
-  );
-
+  const publicRoutes = ['/', '/login', '/register'];
   const isPublic = publicRoutes.includes(pathname);
 
-  // 🔒 If trying to access a protected route without being authenticated
-  if (isProtected && !token) {
-    return NextResponse.redirect(new URL('/', request.url));
+  const userProtectedRoutes = ['/public/home','/profile'];
+  const adminProtectedRoutes = [ '/admin/home', '/admin/users','/profile'];
+
+
+  // const commonRoutes = ['/profile'];
+
+  const isUserRoute = userProtectedRoutes.some(path => pathname.startsWith(path));
+  const isAdminRoute = adminProtectedRoutes.some(path => pathname.startsWith(path));
+
+  // 🔐 Not logged in but trying to access protected area
+  if ((isUserRoute || isAdminRoute) && !token) {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 🚫 If already logged in, prevent going back to login/register
+  // 🔁 Already logged in but accessing login/register — redirect to role-specific home
   if (isPublic && token) {
-    return NextResponse.redirect(new URL('/home', request.url));
+    if (role === 'admin') {
+      return NextResponse.redirect(new URL('/admin/home', request.url));
+    } else {
+      return NextResponse.redirect(new URL('/public/home', request.url));
+    }
+  }
+
+  // 🚫 Admin trying to access user area — block
+  if (isUserRoute && role === 'admin') {
+    return NextResponse.redirect(new URL('/admin/home', request.url));
+  }
+
+
+  // 🚫 User trying to access admin area — block
+  if (isAdminRoute && role === 'public') {
+    return NextResponse.redirect(new URL('/public/home', request.url));
   }
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    '/', '/login', '/register',
+    '/home', '/profile', '/settings',
+    '/admin/:path*'
+  ],
+};

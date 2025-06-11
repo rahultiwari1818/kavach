@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { googleAuth, loginController, logoutController, registerController, verifyEmail } from "../controllers/users.controllers.js";
-import { loginValidations, registerValidations } from "../utils/userValidations.js";
+import { loginValidations, registerValidations } from "../middlewares/validation-middlewares/userValidations.middleware.js";
 import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
 
 const router = Router();

@@ -13,6 +13,11 @@ export async function verifyUser(
       return res.status(ResponseCode.FORBIDDEN).json({ message: "Authentication token missing.!" });
     }
     const user =  verifyToken(authToken);
+
+    if(user.role !== "admin"){
+              return res.status(ResponseCode.UNAUTHORIZED).json({ message: "Login as Admin to use this feature.!" });
+    }
+
     req.user = user;
     next();
   } catch (error) {

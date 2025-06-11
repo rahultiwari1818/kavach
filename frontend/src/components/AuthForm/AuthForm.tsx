@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import "./authform.css";
 import { useGoogleLogin } from "@react-oauth/google";
 import Image from "next/image";
+import Cookies from "js-cookie";
 
 type AuthStep = "form" | "otp";
 type AuthMode = "login" | "register";
@@ -60,7 +61,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
           { withCredentials: true }
         );
         toast.success("Registration successful!");
-        router.push("/home");
+        const role = Cookies.get("role");
+
+        if (role === "admin") {
+          router.push("/admin/home");
+        } else {
+          router.push("/public/home");
+        }
       } catch (err) {
         const error = err as AxiosError<{ message: string }>;
         if (error.response) toast.error(error.response.data.message);
@@ -76,7 +83,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
           },
           { withCredentials: true }
         );
-        router.push("/home");
+        const role = Cookies.get("role");
+        console.log(role)
+        if (role === "admin") {
+          router.push("/admin/home");
+        } else {
+          router.push("/public/home");
+        }
       } catch (err) {
         const error = err as AxiosError<{ message: string }>;
         if (error.response) toast.error(error.response.data.message);
@@ -88,7 +101,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     axios.post(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/googleAuth?`,
       {
-        code:code
+        code: code,
       },
       { withCredentials: true }
     );
@@ -98,7 +111,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
       if ("code" in authResult) {
         const code = (authResult as { code: string }).code;
         await googleAuth(code);
-        router.push("/home");
+        const role = Cookies.get("role");
+
+        if (role === "admin") {
+          router.push("/admin/home");
+        } else {
+          router.push("/public/home");
+        }
       }
     } catch (error) {
       console.log("Error While G Auth :", error);

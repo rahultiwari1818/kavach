@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ResponseCode } from "./responseCode.enum.js";
+import { ResponseCode } from "../../utils/responseCode.enum.js";
 
 export const loginValidations = (
   req: Request,

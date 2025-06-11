@@ -6,7 +6,7 @@ import { generateToken } from "../utils/webTokenUtils.js";
 import { sendOTP } from "../utils/otpUtils.js";
 import oauth2Client from "../config/googleAuth.config.js";
 import axios from "axios";
-
+import userToken from "../interfaces/userToken.interface.js";
 
 export const loginController = async (
   req: Request,
@@ -26,16 +26,23 @@ export const loginController = async (
     const isValid = await comparePassword(password, String(user.password));
 
     if (isValid) {
-      const payload = {
+      const payload: userToken = {
+        _id: String(user._id),
         email: user.email,
-        _id: user._id,
-        role:user.role
+        role: user.role,
       };
 
       const token = generateToken(payload);
 
       res.cookie("authToken", token, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: "lax",
+      });
+
+      res.cookie("role", user.role, {
+        httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         maxAge: 30 * 24 * 60 * 60 * 1000,
         sameSite: "lax",
@@ -75,6 +82,7 @@ export const verifyEmail = async (
       res.status(ResponseCode.CONFLICT).json({
         message: "User with this email already exists",
       });
+      return;
     }
 
     const isOtpSent = await sendOTP(email);
@@ -115,10 +123,23 @@ export const registerController = async (
 
     await newUser.save();
 
-    const token = generateToken({ email, _id: newUser._id,role:newUser.role });
+    const payload: userToken = {
+      _id: String(newUser._id),
+      email: newUser.email,
+      role: newUser.role,
+    };
+
+    const token = generateToken(payload);
 
     res.cookie("authToken", token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+    });
+
+    res.cookie("role", newUser.role, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: "lax",
@@ -145,6 +166,11 @@ export const logoutController = async (
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
     });
+    res.clearCookie("role", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
     res.status(ResponseCode.SUCCESS).json({
       message: "Logout Successfully.!",
     });
@@ -156,15 +182,13 @@ export const logoutController = async (
   }
 };
 
-
-
 export const googleAuth = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const code  = req.body.code;
-    const googleRes =  await oauth2Client.getToken(String(code || ""));
+    const code = req.body.code;
+    const googleRes = await oauth2Client.getToken(String(code || ""));
     oauth2Client.setCredentials(googleRes.tokens);
 
     const userRes = await axios.get(
@@ -178,17 +202,26 @@ export const googleAuth = async (
       user = await User.create({
         name,
         email,
-        role:"public"
+        role: "public",
       });
     }
-    const token =  generateToken({
-      _id: user._id,
+    const payload: userToken = {
+      _id: String(user._id),
       email: user.email,
-      role:user.role
+      role: user.role,
+    };
+
+    const token = generateToken(payload);
+
+    res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
     });
 
-     res.cookie("authToken", token, {
-      httpOnly: true,
+    res.cookie("role", user.role, {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: "lax",
@@ -199,7 +232,7 @@ export const googleAuth = async (
       result: true,
     });
   } catch (err) {
-     console.error("Google Auth Error:", err);
+    console.error("Google Auth Error:", err);
     res
       .status(ResponseCode.INTERNAL_SERVER_ERROR)
       .json({ message: "Internal Server Error" });
