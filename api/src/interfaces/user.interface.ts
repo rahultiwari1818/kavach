@@ -1,4 +1,5 @@
 import { Document } from "mongoose";
+import userToken from "./userToken.interface";
 
 export interface User extends Document {
   name: string;
@@ -12,7 +13,7 @@ export interface User extends Document {
 declare global {
   namespace Express {
     interface Request {
-      user?: Object;
+      user?: userToken;
     }
   }
 }

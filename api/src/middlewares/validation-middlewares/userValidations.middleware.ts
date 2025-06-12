@@ -22,6 +22,9 @@ export const loginValidations = (
     next();
   } catch (error) {
     console.log("Error Occured In Login Validations : ", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message:"Internal Server Error.!"
+    })
   }
 };
 
@@ -60,5 +63,8 @@ export const registerValidations = (
     next();
   } catch (error) {
     console.log("Error Occured In Register Validations : ", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message:"Internal Server Error.!"
+    })
   }
 }

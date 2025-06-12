@@ -4,6 +4,8 @@ import "./globals.css";
 import ToastProvider from "@/context/ToastProvider";
 import NavbarWrapper from "@/components/Navbar/NavbarWrapper";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import 'leaflet/dist/leaflet.css';
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

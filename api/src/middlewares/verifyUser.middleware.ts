@@ -1,24 +1,34 @@
 import { Request, Response, NextFunction } from "express";
 import { ResponseCode } from "../utils/responseCode.enum.js";
 import { verifyToken } from "../utils/webTokenUtils.js";
+import userToken from "../interfaces/userToken.interface.js";
 
-export async function verifyUser(
+export function verifyUser(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): void {
   try {
     const { authToken } = req.cookies;
+
     if (!authToken) {
-      return res.status(ResponseCode.FORBIDDEN).json({ message: "Authentication token missing.!" });
+      res.status(ResponseCode.FORBIDDEN).json({ message: 'Authentication token missing!' });
+      return;
     }
-    const user =  verifyToken(authToken);
-    req.user = user;
+
+    const user = verifyToken(authToken) as userToken;
+
+    if (!user || typeof user !== 'object' || !('role' in user)) {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: 'Invalid token!' });
+      return;
+    }
+
+    req.user = user; // Assuming you've extended `Request` with `user`
     next();
   } catch (error) {
-    console.log("Error Occured While Verifying User :", error);
+    console.error('Error Occurred While Verifying User:', error);
     res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
     });
   }
 }

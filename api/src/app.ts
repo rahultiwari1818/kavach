@@ -5,7 +5,7 @@ import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import { Request,Response } from "express";
-
+import cookieParser from "cookie-parser";
 import usersRoutes from "./routes/users.routes.js";
 
 const app = express();
@@ -26,6 +26,9 @@ app.use(express.urlencoded({extended:true}));
 // implemented morgan for logging
 app.use(morgan("dev"));
 
+
+//
+app.use(cookieParser());
 
 // Swagger UI Middleware
 

@@ -2,20 +2,26 @@ import { Request, Response, NextFunction } from "express";
 import { ResponseCode } from "../utils/responseCode.enum.js";
 import { verifyToken } from "../utils/webTokenUtils.js";
 
-export async function verifyUser(
+export const verifyAdmin =  (
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): void => {
   try {
     const { authToken } = req.cookies;
     if (!authToken) {
-      return res.status(ResponseCode.FORBIDDEN).json({ message: "Authentication token missing.!" });
+      res
+        .status(ResponseCode.FORBIDDEN)
+        .json({ message: "Authentication token missing.!" });
+      return;
     }
-    const user =  verifyToken(authToken);
+    const user = verifyToken(authToken);
 
-    if(user.role !== "admin"){
-              return res.status(ResponseCode.UNAUTHORIZED).json({ message: "Login as Admin to use this feature.!" });
+    if (user.role !== "admin") {
+      res
+        .status(ResponseCode.UNAUTHORIZED)
+        .json({ message: "Login as Admin to use this feature.!" });
+      return;
     }
 
     req.user = user;
@@ -26,4 +32,4 @@ export async function verifyUser(
       message: "Internal Server Error",
     });
   }
-}
+};
