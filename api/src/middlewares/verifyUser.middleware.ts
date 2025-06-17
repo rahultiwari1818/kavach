@@ -16,8 +16,9 @@ export function verifyUser(
       return;
     }
 
-    const user = verifyToken(authToken) as userToken;
 
+    const user = verifyToken(authToken) as userToken;
+    
     if (!user || typeof user !== 'object' || !('role' in user)) {
       res.status(ResponseCode.UNAUTHORIZED).json({ message: 'Invalid token!' });
       return;

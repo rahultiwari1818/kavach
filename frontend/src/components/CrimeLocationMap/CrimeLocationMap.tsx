@@ -20,26 +20,27 @@ const markerIcon = new Icon({
 function LocationPicker({
   setLocation,
 }: {
-  setLocation: (latlng: string) => void;
+  setLocation: (latlng: { lat: number; lng: number }) => void;
 }) {
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
-      setLocation(`${lat},${lng}`);
+      setLocation({ lat, lng });
     },
   });
   return null;
 }
 
-function MapAutoFocus({ location }: { location: string }) {
+function FlyToOnce({ location }: { location: { lat: number; lng: number } }) {
   const map = useMap();
+  const [hasFlown, setHasFlown] = useState(false);
 
   useEffect(() => {
-    if (location) {
-      const [lat, lng] = location.split(",").map(Number);
-      map.setView([lat, lng], 15); // Zoom level 15 for street view
+    if (!hasFlown && location) {
+      map.flyTo([location.lat, location.lng], 15);
+      setHasFlown(true);
     }
-  }, [location, map]);
+  }, [location, hasFlown, map]);
 
   return null;
 }
@@ -48,48 +49,55 @@ export default function CrimeLocationMap({
   location,
   setLocation,
 }: {
-  location: string;
-  setLocation: (val: string) => void;
+  location: { lat: number; lng: number };
+  setLocation: (val: { lat: number; lng: number }) => void;
 }) {
   const [userLocation, setUserLocation] = useState<LatLngExpression | null>(
     null
   );
 
-  useEffect(() => {
+useEffect(() => {
   if (typeof window !== "undefined" && navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const coords: LatLngExpression = [
-          position.coords.latitude,
-          position.coords.longitude,
-        ];
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const coords: LatLngExpression = [lat, lng];
         setUserLocation(coords);
-        setLocation(`${coords[0]},${coords[1]}`);
+        console.log(position+" po")
+        // Only update if location is invalid/default
+        if (location.lat === 0 && location.lng === 0) {
+          setLocation({ lat, lng });
+        }
       },
-      () => setUserLocation([20.5937, 78.9629])
+      () => {
+        const fallback: LatLngExpression = [28.6437, 77.2129];
+        setUserLocation(fallback);
+
+        if (location.lat === 0 && location.lng === 0) {
+          setLocation({ lat: fallback[0], lng: fallback[1] });
+        }
+      }
     );
   }
-}, [setLocation]);
+}, [location.lat, location.lng, setLocation]);
+
+
   if (!userLocation) return <div>Loading map...</div>;
 
   return (
     <MapContainer
-      center={userLocation}
-      zoom={5} // Initial zoom, will be overridden
+      center={location || userLocation}
+      zoom={5}
       style={{ height: "100%", width: "100%" }}
     >
       <TileLayer
         attribution="&copy; OpenStreetMap contributors"
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <FlyToOnce location={location} />
       <LocationPicker setLocation={setLocation} />
-      <MapAutoFocus location={location} />
-      {location && (
-        <Marker
-          position={location.split(",").map(Number) as LatLngExpression}
-          icon={markerIcon}
-        />
-      )}
+      {location && <Marker position={location} icon={markerIcon} />}
     </MapContainer>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
 
 type ChildProps = {
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: FormData) => Promise<boolean>;
 };
 
 const CrimeLocationMap = dynamic(
@@ -18,9 +18,10 @@ const CrimeLocationMap = dynamic(
 export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
   const [data, setData] = useState({
     title: "",
-    type: "",
+    type: "theft",
     description: "",
-    location: "",
+    latitude: "",
+    longitude: "",
     datetime: "",
     anonymous: false,
   });
@@ -48,9 +49,13 @@ export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
   const handleSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value.toString());
-    });
+    formData.append("title", data.title);
+    formData.append("type", data.type);
+    formData.append("description", data.description);
+    formData.append("latitude", data.latitude);
+    formData.append("longitude", data.longitude);
+    formData.append("datetime", data.datetime);
+    formData.append("anonymous", data.anonymous.toString());
 
     // Append media files
     if (media) {
@@ -64,52 +69,20 @@ export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
         });
       }
     }
-    onSubmit(formData);
-  };
-
-  //   const markerIcon = new Icon({
-  //     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  //     iconSize: [25, 41],
-  //     iconAnchor: [12, 41],
-  //   });
-
-  //   function LocationPicker({
-  //     setLocation,
-  //   }: {
-  //     setLocation: (latlng: string) => void;
-  //   }) {
-  //     useMapEvents({
-  //       click(e) {
-  //         const { lat, lng } = e.latlng;
-  //         setLocation(`${lat},${lng}`);
-  //       },
-  //     });
-  //     return null;
-  //   }
-
-//   const [userPosition, setUserPosition] = useState<LatLngExpression | null>(
-//     null
-//   );
-
-  // Get user's location on mount
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-        //   setUserPosition([latitude, longitude]);
-          setData((prev) => ({
-            ...prev,
-            location: `${latitude},${longitude}`,
-          }));
-          //   console.log(position.coords)
-        },
-        (error) => {
-          console.warn("Geolocation error:", error.message);
-        }
-      );
+    const res = await onSubmit(formData);
+    if (res) {
+      setData(() => ({
+        title: "",
+        type: "theft",
+        description: "",
+        latitude: "",
+        longitude: "",
+        datetime: "",
+        anonymous: false,
+      }));
+      setMedia([]);
     }
-  }, []);
+  };
 
   return (
     <form
@@ -195,14 +168,24 @@ export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
         </label>
         <div className=" h-72 border border-gray-300">
           <CrimeLocationMap
-            location={data.location}
+            location={{
+              lat: Number(data.latitude),
+              lng: Number(data.longitude),
+            }}
             setLocation={(latlng) => {
-              return setData((prev) => ({ ...prev, location: latlng }));
+              setData((prev) => ({
+                ...prev,
+                latitude: latlng.lat.toString(),
+                longitude: latlng.lng.toString(),
+              }));
             }}
           />
         </div>
-        <p className=" my-1 relative text-black z-10">
-          Clicked coordinates: {data.location || "None"}
+        <p className="my-1 ...">
+          Clicked coordinates:{" "}
+          {data.latitude && data.longitude
+            ? `${data.latitude}, ${data.longitude}`
+            : "None"}
         </p>
       </div>
 

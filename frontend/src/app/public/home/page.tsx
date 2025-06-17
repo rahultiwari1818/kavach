@@ -1,21 +1,16 @@
 "use client";
 
-import CrimeReportForm from "@/components/CrimeReportForm/CrimeReportForm";
-import axios from "axios";
+import dynamic from "next/dynamic";
 
-export default function ReportPage() {
-  const handleCrimeSubmit = async (data: FormData) => {
-    try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/crime/report-crime`, data, {
-        withCredentials: true,
-      });
-      console.log(response)
-      // alert("Report submitted successfully.");
-    } catch (error) {
-      // alert("Failed to submit the report.");
-      console.error(error);
-    }
-  };
+const CrimeMap = dynamic(() => import("@/components/CrimeMap/CrimeMap"), {
+  ssr: false,
+});
 
-  return <CrimeReportForm onSubmit={handleCrimeSubmit} />;
+export default function CrimeNearbyPage() {
+  return (
+    <div>
+      <h1 className="text-xl font-bold p-2">Crimes Near You</h1>
+      <CrimeMap />
+    </div>
+  );
 }

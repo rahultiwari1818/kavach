@@ -24,11 +24,17 @@ export default interface CrimeReport extends Document {
     | "corruption"
     | "other";
   description: string;
-  location: string;
-  datetime: Date; // when the crime occurred
-  mediaUrl?: string; // optional proof or evidence (e.g., image/video)
+  location: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
+  datetime: Date;
+  mediaUrl?: Array<{
+    url: string;
+    type: string;
+  }>;
   anonymous: boolean;
-  reportedBy: Types.ObjectId; // Only present if not anonymous
+  reportedBy: Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
 }

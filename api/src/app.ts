@@ -7,6 +7,7 @@ import swaggerSpec from "./swagger.js";
 import { Request,Response } from "express";
 import cookieParser from "cookie-parser";
 import usersRoutes from "./routes/users.routes.js";
+import crimeRoutes from "./routes/crimeReport.routes.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(morgan("dev"));
 //
 app.use(cookieParser());
 
+
 // Swagger UI Middleware
 
 app.get("/swagger.json", (_req : Request, res : Response) => {
@@ -47,6 +49,11 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(undefined, {
 
 // user route middleware
 app.use("/api/v1/users",usersRoutes);
+
+
+
+// crime route middleware
+app.use("/api/v1/crime",crimeRoutes);
 
 
 
