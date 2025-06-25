@@ -82,9 +82,24 @@ export const getNearbyCrimes = async (
         $geoNear: {
           near: { type: "Point", coordinates: [lng, lat] },
           distanceField: "distance",
-          maxDistance: 3000, // meters
+          maxDistance: 3000, // in meters
           spherical: true,
+          query: { isVerified: true },
         },
+      },
+      {
+        $lookup: {
+          from: "users", // name of your user collection (usually lowercase plural of model)
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      {
+        $unwind: "$reportedBy",
+      },
+      {
+        $unset: "reportedBy.password", // ✅ removes password from populated user
       },
     ]);
 
@@ -96,5 +111,91 @@ export const getNearbyCrimes = async (
     res
       .status(ResponseCode.INTERNAL_SERVER_ERROR)
       .json({ error: "Internal Server Error.!" });
+  }
+};
+
+export const getMyCrimeReports = async (req: Request, res: Response) => {
+  try {
+    const userId = req?.user?._id;
+
+    const myReports = await CrimeReportModel.find({ reportedBy: userId }).sort({
+      createdAt: -1,
+    });
+    res.status(ResponseCode.SUCCESS).json({ data: myReports });
+  } catch (err) {
+    console.error("Error fetching user's crime reports:", err);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Failed to fetch your crime reports." });
+  }
+};
+
+export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
+  try {
+    const crimes = await CrimeReportModel.aggregate([
+      {
+        $match: { isVerified: false }, // 🔍 only unverified crimes
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      {
+        $unwind: "$reportedBy",
+      },
+      {
+        $unset: "reportedBy.password", // 🛡️ remove password field
+      },
+    ]);
+
+    res.status(ResponseCode.SUCCESS).json({ data: crimes });
+  } catch (error) {
+    console.error("Getting Unverified Crime Error:", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const changeVerificationStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id || typeof status !== "boolean") {
+      res.status(ResponseCode.BAD_REQUEST).json({
+        message: "Crime ID and status (boolean) are required",
+      });
+      return;
+    }
+
+    const crime = await CrimeReportModel.findByIdAndUpdate(
+      id,
+      { isVerified: status },
+      { new: true }
+    );
+
+    if (!crime) {
+      res.status(ResponseCode.NOT_FOUND).json({
+        message: "Crime report not found",
+      });
+      return;
+    }
+
+    res.status(ResponseCode.SUCCESS).json({
+      message: `Crime report has been ${
+        status ? "verified" : "unverified"
+      } successfully`,
+      crime,
+    });
+  } catch (error: any) {
+    console.error("Changing Verification Status Error:", error.message);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
   }
 };

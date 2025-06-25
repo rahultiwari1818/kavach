@@ -37,4 +37,5 @@ export default interface CrimeReport extends Document {
   reportedBy: Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
+  isVerified:boolean;
 }

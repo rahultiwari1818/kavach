@@ -2,3 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* tailwind.config or global.css */
+.nav-link {
+  @apply text-gray-700 font-medium px-4 py-2 hover:text-blue-600 transition;
+}

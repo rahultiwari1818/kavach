@@ -61,6 +61,11 @@ const crimeReportSchema = new Schema<CrimeReport>(
       ref: "User",
       required: true,
     },
+    isVerified:{
+      required:true,
+      type:Boolean,
+      default:false
+    }
   },
   {
     timestamps: true,

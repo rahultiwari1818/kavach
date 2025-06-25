@@ -2,22 +2,23 @@
 
 import axios, { AxiosError } from "axios";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import Cookies from "js-cookie";
+import { useState } from "react";
 
 export default function Navbar() {
   const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const logoutHandler = async () => {
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/logout`,
         {},
-        {
-          withCredentials: true, // important for sending cookies
-        }
+        { withCredentials: true }
       );
-
       router.push("/");
     } catch (err) {
       const error = err as AxiosError<{ message: string }>;
@@ -25,15 +26,83 @@ export default function Navbar() {
     }
   };
 
+  const role = Cookies.get("role");
+
   return (
-    <nav className="px-5 py-3 bg-gray-100 flex justify-between items-center">
-      <Image src={"/logo.jpg"} alt="logo" width={100} height={100} />
-      <button
-        className="px-5 py-2 rounded shadow bg-red-500 text-white"
-        onClick={logoutHandler}
-      >
-        Logout
-      </button>
+    <nav className="bg-white shadow-md sticky top-0 z-50 px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logo.jpg"
+            alt="Logo"
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+          <span className="text-xl font-bold text-blue-600">Kavach</span>
+        </Link>
+
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-6">
+          {role === "admin" ? (
+            <Link href="/admin/home" className="nav-link">
+               Home
+            </Link>
+          ) : (
+            <>
+              <Link href="/public/home" className="nav-link">
+                Home
+              </Link>
+              <Link href="/public/crime-report" className="nav-link">
+                Report Crime
+              </Link>
+            </>
+          )}
+          <button
+            onClick={logoutHandler}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Mobile Toggle */}
+        <div className="md:hidden">
+          <button
+            className="text-2xl focus:outline-none"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? "×" : "☰"}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden mt-4 space-y-3 px-4">
+          {role === "admin" ? (
+            <Link href="/admin/home" className="block nav-link">
+              Admin Home
+            </Link>
+          ) : (
+            <>
+              <Link href="/public/home" className="block nav-link">
+                Home
+              </Link>
+              <Link href="/public/crime-report" className="block nav-link">
+                Report Crime
+              </Link>
+            </>
+          )}
+          <button
+            onClick={logoutHandler}
+            className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

@@ -29,6 +29,11 @@ type Crime = {
     coordinates: [number, number]; // [lng, lat]
   };
   datetime: string;
+  reportedBy:{
+    name:string,
+    _id:string,
+    email:string
+  }
 };
 
 export default function CrimeMap() {
@@ -105,6 +110,9 @@ export default function CrimeMap() {
                 {crime.description}
                 <br />
                 Reported: {new Date(crime.datetime).toLocaleString()}
+                <br/>
+                Reported By : {crime?.reportedBy.name}
+                <br />
               </Popup>
             </Marker>
           );
