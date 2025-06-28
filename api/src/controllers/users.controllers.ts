@@ -3,7 +3,7 @@ import User from "../models/users.model.js";
 import { ResponseCode } from "../utils/responseCode.enum.js";
 import { comparePassword, hashPassword } from "../utils/utils.js";
 import { generateToken } from "../utils/webTokenUtils.js";
-import { sendOTP } from "../utils/otpUtils.js";
+import { sendOTP, verifyOTP } from "../utils/otpUtils.js";
 import oauth2Client from "../config/googleAuth.config.js";
 import axios from "axios";
 import userToken from "../interfaces/userToken.interface.js";
@@ -238,6 +238,98 @@ export const googleAuth = async (
       .json({ message: "Internal Server Error" });
   }
 };
+
+
+
+
+export const forgotPasswordSendOTP = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Email is required" });
+      return;
+    }
+
+    const userExist = await doesUserAlreadyExist(email);
+    if (!userExist) {
+      res.status(ResponseCode.CONFLICT).json({
+        message: "Email is not registered.!",
+      });
+      return;
+    }
+
+    const isOtpSent = await sendOTP(email);
+
+    if (isOtpSent) {
+      res.status(ResponseCode.SUCCESS).json({
+        message: "OTP sent successfully",
+      });
+      return;
+    } else {
+      res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+        message: "Error Occured While sending OTP!",
+      });
+      return;
+    }
+  } catch (error) {
+    console.error("Email Sending for Forgot password Error:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { otp, password, email } = req.body;
+
+    if (!otp) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "OTP is required" });
+      return;
+    }
+    if (!password) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      return;
+    }
+    if (!email) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Email is required" });
+      return;
+    }
+
+    // Verify OTP
+    const isOTPValid = verifyOTP(otp, email);
+    if (!isOTPValid) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Incorrect OTP" });
+      return;
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(ResponseCode.NOT_FOUND).json({ message: "User not found" });
+      return;
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(password);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(ResponseCode.SUCCESS).json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Forgot password Error:", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({ message: "Internal Server Error" });
+  }
+};
+
 
 // ----------------------------------------------------------------------- Util Funcations for Controllers ----------------------------------------------------------------------------------
 

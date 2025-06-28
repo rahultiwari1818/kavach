@@ -18,7 +18,6 @@ const redIcon = new Icon({
   iconAnchor: [12, 41],
 });
 
-
 type Crime = {
   _id: string;
   title: string;
@@ -29,21 +28,26 @@ type Crime = {
     coordinates: [number, number]; // [lng, lat]
   };
   datetime: string;
-  reportedBy:{
-    name:string,
-    _id:string,
-    email:string
-  }
+  reportedBy: {
+    name: string;
+    _id: string;
+    email: string;
+  };
 };
 
 export default function CrimeMap() {
-  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(
-    null
-  );
+  const [mounted, setMounted] = useState(false);
+  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null);
   const [crimes, setCrimes] = useState<Crime[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -62,7 +66,6 @@ export default function CrimeMap() {
                 withCredentials: true,
               }
             );
-           
             setCrimes(res.data.data || []);
           } catch (err) {
             console.error("Error fetching nearby crimes", err);
@@ -75,18 +78,17 @@ export default function CrimeMap() {
           setLoading(false);
         }
       );
+    } else {
+      console.error("Geolocation not supported");
+      setLoading(false);
     }
-  }, []);
+  }, [mounted]);
 
-  if (loading || !userLocation) return <div>Loading map...</div>;
+  if (!mounted || loading || !userLocation) return <div>Loading map...</div>;
 
   return (
     <div className="w-full h-[80vh]">
-      <MapContainer
-        center={userLocation}
-        zoom={13}
-        style={{ height: "100%", width: "100%" }}
-      >
+      <MapContainer center={userLocation} zoom={13} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -110,8 +112,8 @@ export default function CrimeMap() {
                 {crime.description}
                 <br />
                 Reported: {new Date(crime.datetime).toLocaleString()}
-                <br/>
-                Reported By : {crime?.reportedBy.name}
+                <br />
+                Reported By: {crime.reportedBy?.name}
                 <br />
               </Popup>
             </Marker>
