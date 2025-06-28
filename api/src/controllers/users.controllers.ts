@@ -303,7 +303,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     }
 
     // Verify OTP
-    const isOTPValid = verifyOTP(otp, email);
+    const isOTPValid = await verifyOTP(otp, email);
     if (!isOTPValid) {
       res.status(ResponseCode.BAD_REQUEST).json({ message: "Incorrect OTP" });
       return;

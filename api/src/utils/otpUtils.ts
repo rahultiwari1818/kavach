@@ -37,8 +37,11 @@ export const verifyOTP = async (
 ): Promise<Boolean> => {
   try {
     const storedOtp = await client.get(email);
-    await client.del(email);
-    return storedOtp === otp;
+    if(storedOtp ===  otp){
+      await client.del(email);
+      return true;
+    }
+    return false ;
   } catch (error) {
     console.error(" Error while Verifying OTP :", error);
     return false;
