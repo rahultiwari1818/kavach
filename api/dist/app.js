@@ -3,7 +3,9 @@ import cors from 'cors';
 import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
+import cookieParser from "cookie-parser";
 import usersRoutes from "./routes/users.routes.js";
+import crimeRoutes from "./routes/crimeReport.routes.js";
 const app = express();
 // implemented cors middleware 
 app.use(cors({
@@ -15,6 +17,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // implemented morgan for logging
 app.use(morgan("dev"));
+//
+app.use(cookieParser());
 // Swagger UI Middleware
 app.get("/swagger.json", (_req, res) => {
     res.setHeader("Content-Type", "application/json");
@@ -26,5 +30,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(undefined, {
 // ------------------------------------ Routes --------------------------------------------------------------------------
 // user route middleware
 app.use("/api/v1/users", usersRoutes);
+// crime route middleware
+app.use("/api/v1/crime", crimeRoutes);
 export default app;
 //# sourceMappingURL=app.js.map

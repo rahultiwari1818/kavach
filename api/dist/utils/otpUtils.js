@@ -24,8 +24,11 @@ export const sendOTP = async (email) => {
 export const verifyOTP = async (otp, email) => {
     try {
         const storedOtp = await client.get(email);
-        await client.del(email);
-        return storedOtp === otp;
+        if (storedOtp === otp) {
+            await client.del(email);
+            return true;
+        }
+        return false;
     }
     catch (error) {
         console.error(" Error while Verifying OTP :", error);
