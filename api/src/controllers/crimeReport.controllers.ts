@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import CrimeReportModel from "../models/crimeReport.model";
-import { ResponseCode } from "../utils/responseCode.enum";
-import { uploadToCloudinary } from "../config/cloudinary.config";
+import CrimeReportModel from "../models/crimeReport.model.js";
+import { ResponseCode } from "../utils/responseCode.enum.js";
+import { uploadToCloudinary } from "../config/cloudinary.config.js";
 
 export const crimeReportController = async (
   req: Request,

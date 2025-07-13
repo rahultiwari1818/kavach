@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ResponseCode } from "../../utils/responseCode.enum";
+import { ResponseCode } from "../../utils/responseCode.enum.js";
 
 export const crimeReportValidation = (req: Request, res: Response, next: NextFunction): void => {
   try {

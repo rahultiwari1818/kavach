@@ -1,6 +1,6 @@
-import CrimeReportModel from "../models/crimeReport.model";
-import { ResponseCode } from "../utils/responseCode.enum";
-import { uploadToCloudinary } from "../config/cloudinary.config";
+import CrimeReportModel from "../models/crimeReport.model.js";
+import { ResponseCode } from "../utils/responseCode.enum.js";
+import { uploadToCloudinary } from "../config/cloudinary.config.js";
 export const crimeReportController = async (req, res) => {
     try {
         const { title, type, description, latitude, longitude, datetime, anonymous, } = req.body;

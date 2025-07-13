@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { changeVerificationStatus, crimeReportController, getAllUnverifiedCrimes, getMyCrimeReports, getNearbyCrimes } from "../controllers/crimeReport.controllers";
-import { verifyUser } from "../middlewares/verifyUser.middleware";
-import { crimeReportValidation } from "../middlewares/validation-middlewares/crimeReportValidations.middleware";
-import upload from "../middlewares/multer-file-upload/file_upload.middleware";
-import { verifyAdmin } from "../middlewares/verifyAdmin.middleware";
+import { changeVerificationStatus, crimeReportController, getAllUnverifiedCrimes, getMyCrimeReports, getNearbyCrimes } from "../controllers/crimeReport.controllers.js";
+import { verifyUser } from "../middlewares/verifyUser.middleware.js";
+import { crimeReportValidation } from "../middlewares/validation-middlewares/crimeReportValidations.middleware.js";
+import upload from "../middlewares/multer-file-upload/file_upload.middleware.js";
+import { verifyAdmin } from "../middlewares/verifyAdmin.middleware.js";
 const router = Router();
 // ----------------------------------------------- User Crime Routes ------------------------------------------------
 router.post("/report-crime", upload.array("media"), verifyUser, crimeReportValidation, crimeReportController);

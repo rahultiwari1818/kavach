@@ -1,4 +1,4 @@
-import { ResponseCode } from "../../utils/responseCode.enum";
+import { ResponseCode } from "../../utils/responseCode.enum.js";
 export const crimeReportValidation = (req, res, next) => {
     try {
         const { title, type, description, latitude, longitude, datetime, anonymous } = req.body;
