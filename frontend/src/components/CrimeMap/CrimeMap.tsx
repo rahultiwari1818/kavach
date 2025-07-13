@@ -53,6 +53,7 @@ export default function CrimeMap() {
         async (position) => {
           const { latitude, longitude } = position.coords;
           setUserLocation([latitude, longitude]);
+          // console.log(latitude,longitude);
 
           try {
             const res = await axios.get(
