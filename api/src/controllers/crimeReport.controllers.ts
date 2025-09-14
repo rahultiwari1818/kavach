@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import CrimeReportModel from "../models/crimeReport.model.js";
 import { ResponseCode } from "../utils/responseCode.enum.js";
 import { uploadToCloudinary } from "../config/cloudinary.config.js";
+import CrimeReport from "../interfaces/crimeReport.interface.js";
 
 export const crimeReportController = async (
   req: Request,
@@ -161,6 +162,38 @@ export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
   }
 };
 
+
+export const getAllverifiedCrimes = async (req: Request, res: Response) => {
+  try {
+    const crimes = await CrimeReportModel.aggregate([
+      {
+        $match: { isVerified: true }, // 🔍 only unverified crimes
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      {
+        $unwind: "$reportedBy",
+      },
+      {
+        $unset: "reportedBy.password", // 🛡️ remove password field
+      },
+    ]);
+
+    res.status(ResponseCode.SUCCESS).json({ data: crimes });
+  } catch (error) {
+    console.error("Getting Unverified Crime Error:", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export const changeVerificationStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -197,5 +230,60 @@ export const changeVerificationStatus = async (req: Request, res: Response) => {
     res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
       message: "Internal Server Error",
     });
+  }
+};
+
+export const getCrimeClusters = async (req: Request, res: Response) => {
+  try {
+    const radiusInMeters = 1000;
+    const minClusterSize = 10;
+
+    const allCrimes : CrimeReport[] = await CrimeReportModel.find({}, { location: 1 });
+
+    const visited = new Set();
+    const clusters: any[] = [];
+
+    for (let i = 0; i < allCrimes.length; i++) {
+      if (visited.has(allCrimes[i]._id.toString())) continue;
+
+      const centerCrime = allCrimes[i];
+      const nearbyCrimes = await CrimeReportModel.find({
+        location: {
+          $nearSphere: {
+            $geometry: centerCrime.location,
+            $maxDistance: radiusInMeters,
+          },
+        },
+      });
+
+      const clusterCrimes = nearbyCrimes.filter(c =>
+        !visited.has(c._id.toString())
+      );
+
+      if (clusterCrimes.length >= minClusterSize) {
+        clusterCrimes.forEach(c => visited.add(c._id.toString()));
+        const avgLat =
+          clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[1], 0) /
+          clusterCrimes.length;
+        const avgLng =
+          clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[0], 0) /
+          clusterCrimes.length;
+
+        clusters.push({
+          center: { lat: avgLat, lng: avgLng },
+          count: clusterCrimes.length,
+          crimes: clusterCrimes.map(c => ({
+            id: c._id,
+            lat: c.location.coordinates[1],
+            lng: c.location.coordinates[0],
+          })),
+        });
+      }
+    }
+
+    res.status(200).json({ clusters });
+  } catch (err) {
+    console.error("Error clustering crimes:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

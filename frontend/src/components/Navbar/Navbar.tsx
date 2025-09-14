@@ -46,9 +46,14 @@ export default function Navbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6">
           {role === "admin" ? (
+            <>
             <Link href="/admin/home" className="nav-link">
                Home
             </Link>
+            <Link href="/admin/verified-crime" className="nav-link">
+               Verified Crimes
+            </Link>
+            </>
           ) : (
             <>
               <Link href="/public/home" className="nav-link">

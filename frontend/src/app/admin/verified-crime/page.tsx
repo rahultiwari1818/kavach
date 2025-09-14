@@ -33,7 +33,7 @@ export default function AdminCrimesPage() {
   const fetchUnverifiedCrimes = async () => {
     try {
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/getAllUnverifiedCrimes`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/getAllverifiedCrimes`,
         {
           withCredentials: true,
         }

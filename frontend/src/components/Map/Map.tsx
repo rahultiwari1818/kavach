@@ -34,13 +34,13 @@ type Props = {
 };
 
 const redMarker = new Icon({
-  iconUrl: "https://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=warning|FF0000",
+  iconUrl: "/redMarker.png",
   iconSize: [30, 40],
   iconAnchor: [15, 40],
 });
 
 const greenMarker = new Icon({
-  iconUrl: "https://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=check|00FF00",
+  iconUrl: "/greenMarker.png",
   iconSize: [30, 40],
   iconAnchor: [15, 40],
 });

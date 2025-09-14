@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-markercluster";
 import { LatLngExpression, Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
+// import "react-leaflet-markercluster/dist/styles.min.css"; // REQUIRED CSS
 
 const markerIcon = new Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -13,7 +15,8 @@ const markerIcon = new Icon({
 });
 
 const redIcon = new Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+  iconUrl:
+    "/redMarker.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
@@ -53,7 +56,6 @@ export default function CrimeMap() {
         async (position) => {
           const { latitude, longitude } = position.coords;
           setUserLocation([latitude, longitude]);
-          // console.log(latitude,longitude);
 
           try {
             const res = await axios.get(
@@ -94,32 +96,38 @@ export default function CrimeMap() {
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {/* User Location Marker */}
         <Marker position={userLocation} icon={markerIcon}>
           <Popup>Your Location</Popup>
         </Marker>
-        {crimes?.map((crime) => {
-          const coords = crime.location?.coordinates;
-          if (!Array.isArray(coords) || coords.length < 2) return null;
 
-          const [lng, lat] = coords;
-          if (typeof lat !== "number" || typeof lng !== "number") return null;
-          return (
-            <Marker key={crime._id} position={[lat, lng]} icon={redIcon}>
-              <Popup>
-                <strong>{crime.title}</strong>
-                <br />
-                Type: {crime.type}
-                <br />
-                {crime.description}
-                <br />
-                Reported: {new Date(crime.datetime).toLocaleString()}
-                <br />
-                Reported By: {crime.reportedBy?.name}
-                <br />
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* Clustered Crime Markers */}
+        <MarkerClusterGroup>
+          {crimes.map((crime) => {
+            const coords = crime.location?.coordinates;
+            if (!Array.isArray(coords) || coords.length < 2) return null;
+
+            const [lng, lat] = coords;
+            if (typeof lat !== "number" || typeof lng !== "number") return null;
+
+            return (
+              <Marker key={crime._id} position={[lat, lng]} icon={redIcon}>
+                <Popup>
+                  <strong>{crime.title}</strong>
+                  <br />
+                  Type: {crime.type}
+                  <br />
+                  {crime.description}
+                  <br />
+                  Reported: {new Date(crime.datetime).toLocaleString()}
+                  <br />
+                  Reported By: {crime.reportedBy?.name}
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
       </MapContainer>
     </div>
   );
