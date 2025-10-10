@@ -2,133 +2,103 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-markercluster";
-import { LatLngExpression, Icon } from "leaflet";
-import "leaflet/dist/leaflet.css";
-// import "react-leaflet-markercluster/dist/styles.min.css"; // REQUIRED CSS
+import { Icon } from "leaflet";
+import dynamic from "next/dynamic";
+import { MapMarker } from "@/components/map/types";
+import CustomMap from "@/components/Map/Map";
+import { Crime } from "./types";
 
-const markerIcon = new Icon({
+// Optional: dynamic import for SSR safety if needed
+const MarkerClusterGroup = dynamic(() => import("react-leaflet-markercluster"), { ssr: false });
+
+const userIcon = new Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
 
-const redIcon = new Icon({
-  iconUrl:
-    "/redMarker.png",
+const crimeIcon = new Icon({
+  iconUrl: "/redMarker.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
 
-type Crime = {
-  _id: string;
-  title: string;
-  type: string;
-  description: string;
-  location: {
-    type: string;
-    coordinates: [number, number]; // [lng, lat]
-  };
-  datetime: string;
-  reportedBy: {
-    name: string;
-    _id: string;
-    email: string;
-  };
-};
+
 
 export default function CrimeMap() {
-  const [mounted, setMounted] = useState(false);
-  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null);
-  const [crimes, setCrimes] = useState<Crime[]>([]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([latitude, longitude]);
-
-          try {
-            const res = await axios.get(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/nearby`,
-              {
-                params: {
-                  lat: latitude,
-                  lng: longitude,
-                  radius: 3000,
-                },
-                withCredentials: true,
-              }
-            );
-            setCrimes(res.data.data || []);
-          } catch (err) {
-            console.error("Error fetching nearby crimes", err);
-          } finally {
-            setLoading(false);
-          }
-        },
-        (err) => {
-          console.error("Geolocation error", err);
-          setLoading(false);
-        }
-      );
-    } else {
+    if (!navigator.geolocation) {
       console.error("Geolocation not supported");
       setLoading(false);
+      return;
     }
-  }, [mounted]);
 
-  if (!mounted || loading || !userLocation) return <div>Loading map...</div>;
+    console.log(navigator.geolocation)
 
-  return (
-    <div className="w-full h-[80vh]">
-      <MapContainer center={userLocation} zoom={13} style={{ height: "100%", width: "100%" }}>
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation([latitude, longitude]);
 
-        {/* User Location Marker */}
-        <Marker position={userLocation} icon={markerIcon}>
-          <Popup>Your Location</Popup>
-        </Marker>
+        try {
+          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/nearby`, {
+            params: { lat: latitude, lng: longitude, radius: 3000 },
+            withCredentials: true,
+          });
 
-        {/* Clustered Crime Markers */}
-        <MarkerClusterGroup>
-          {crimes.map((crime) => {
-            const coords = crime.location?.coordinates;
-            if (!Array.isArray(coords) || coords.length < 2) return null;
+          const crimes = res.data.data || [];
 
-            const [lng, lat] = coords;
-            if (typeof lat !== "number" || typeof lng !== "number") return null;
-
-            return (
-              <Marker key={crime._id} position={[lat, lng]} icon={redIcon}>
-                <Popup>
+          const crimeMarkers: MapMarker[] = crimes.map((crime: Crime) => {
+            const [lng, lat] = crime.location.coordinates;
+            return {
+              id: crime._id,
+              position: [lat, lng],
+              popupContent: (
+                <div>
                   <strong>{crime.title}</strong>
                   <br />
-                  Type: {crime.type}
+                  <span>Type: {crime.type}</span>
                   <br />
-                  {crime.description}
+                  <span>{crime.description}</span>
                   <br />
-                  Reported: {new Date(crime.datetime).toLocaleString()}
+                  <span>Reported: {new Date(crime.datetime).toLocaleString()}</span>
                   <br />
-                  Reported By: {crime.reportedBy?.name}
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MarkerClusterGroup>
-      </MapContainer>
-    </div>
+                  <span>By: {crime.reportedBy?.name}</span>
+                </div>
+              ),
+              icon: crimeIcon,
+            };
+          });
+
+          setMarkers(crimeMarkers);
+        } catch (err) {
+          console.error("Error fetching nearby crimes", err);
+        } finally {
+          setLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation error", err);
+        setLoading(false);
+      }
+    );
+  }, []);
+
+  if (loading || !userLocation) return <div>Loading map...</div>;
+
+  return (
+    <CustomMap
+      showUserLocation={true}
+      center={userLocation}
+      zoom={13}
+      markers={markers}
+      height="80vh"
+      userIcon={userIcon}
+      tileUrl="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
   );
 }

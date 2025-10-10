@@ -207,7 +207,7 @@
 
 ## 6. Wireframe Design (PDF)
 
-📎 **Wireframe Attached:** [📄 Kavach_Wireframes.pdf](./assets/Kavach_UI_UX_design.pdf)
+📎 **Wireframe Attached:** [📄 Kavach_Wireframes.pdf](./assets/Kavach_UI_UX.pdf)
 
 *Includes layouts for:*
 - Crime Reporting Page (Citizen)
