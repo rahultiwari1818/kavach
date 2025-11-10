@@ -1,12 +1,17 @@
 import { Request, Response } from "express";
 import User from "../models/users.model.js";
 import { ResponseCode } from "../utils/responseCode.enum.js";
-import { comparePassword, hashPassword } from "../utils/utils.js";
+import {
+  comparePassword,
+  emailHTMLTemplate,
+  hashPassword,
+} from "../utils/utils.js";
 import { generateToken } from "../utils/webTokenUtils.js";
 import { sendOTP, verifyOTP } from "../utils/otpUtils.js";
 import oauth2Client from "../config/googleAuth.config.js";
 import axios from "axios";
 import userToken from "../interfaces/userToken.interface.js";
+import { sendMail } from "../config/mail.config.js";
 
 export const loginController = async (
   req: Request,
@@ -23,9 +28,14 @@ export const loginController = async (
       return;
     }
 
-    const isValid = await comparePassword(password, String(user.password));
+    const isValidPassword = await comparePassword(
+      password,
+      String(user.password)
+    );
 
-    if (isValid) {
+    const isActive = user.isActive;
+
+    if (isValidPassword && isActive) {
       const payload: userToken = {
         _id: String(user._id),
         email: user.email,
@@ -52,9 +62,14 @@ export const loginController = async (
         message: "Loggedin Successfully.!",
       });
     } else {
-      res.status(ResponseCode.BAD_REQUEST).json({
-        message: "Incorrect Password.!",
-      });
+      if (!isValidPassword)
+        res.status(ResponseCode.BAD_REQUEST).json({
+          message: "Incorrect Password.!",
+        });
+      else
+        res.status(ResponseCode.BAD_REQUEST).json({
+          message: "Login Disabled .!",
+        });
     }
   } catch (error) {
     console.error("Login Error:", error);
@@ -205,6 +220,15 @@ export const googleAuth = async (
         role: "public",
       });
     }
+    else{
+      if(!user.isActive){
+        res.status(ResponseCode.FORBIDDEN).json({
+          message:"Login Disabled",
+          result:false
+        })
+        return;
+      }
+    }
     const payload: userToken = {
       _id: String(user._id),
       email: user.email,
@@ -238,9 +262,6 @@ export const googleAuth = async (
       .json({ message: "Internal Server Error" });
   }
 };
-
-
-
 
 export const forgotPasswordSendOTP = async (
   req: Request,
@@ -284,8 +305,10 @@ export const forgotPasswordSendOTP = async (
   }
 };
 
-
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { otp, password, email } = req.body;
 
@@ -294,11 +317,15 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
     if (!password) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Password is required" });
       return;
     }
     if (!email) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Email is required" });
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Email is required" });
       return;
     }
 
@@ -323,10 +350,201 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     user.password = hashedPassword;
     await user.save();
 
-    res.status(ResponseCode.SUCCESS).json({ message: "Password reset successfully" });
+    res
+      .status(ResponseCode.SUCCESS)
+      .json({ message: "Password reset successfully" });
   } catch (error) {
     console.error("Forgot password Error:", error);
-    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({ message: "Internal Server Error" });
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error" });
+  }
+};
+
+export const addAdminController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { name, email, password } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res
+        .status(ResponseCode.CONFLICT)
+        .json({ error: "An account with this email already exists." });
+      return;
+    }
+
+    // Check if the request is made by a super admin
+    const requester = (req as any).user; // assuming user info is attached via JWT middleware
+    if (!requester || requester.role !== "super-admin") {
+      res
+        .status(ResponseCode.FORBIDDEN)
+        .json({ error: "Access denied. Only super admins can add admins." });
+      return;
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const newAdmin = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: "admin",
+    });
+
+    await newAdmin.save();
+    const body = `
+  <p>Hello,</p>
+  <p>You have been added as a new <strong>Admin</strong> on <b>Kavach App</b>.</p>
+  <p>Here are your login details:</p>
+  <ul>
+    <li><strong>Email:</strong> ${email}</li>
+    <li><strong>Password:</strong> ${password}</li>
+  </ul>
+  <p>For your security, please reset your password after your first login.</p>
+  <p>Welcome aboard,<br/>The Kavach Team</p>
+`;
+
+    sendMail(email, "Added As Admin on Kavach", emailHTMLTemplate(body));
+
+    res.status(ResponseCode.CREATED).json({
+      message: "Admin added successfully.",
+      admin: {
+        id: newAdmin._id,
+        name: newAdmin.name,
+        email: newAdmin.email,
+        role: newAdmin.role,
+      },
+    });
+  } catch (error) {
+    console.error("Error adding admin:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ error: "Internal server error while adding admin." });
+  }
+};
+
+export const getAdminsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const admins = await User.find({ role: "admin" }).select(
+      "_id name email isActive"
+    );
+    if (!admins || admins.length === 0) {
+      res.status(ResponseCode.SUCCESS).json({data:[], message: "No admins found." });
+      return;
+    }
+
+    res
+      .status(ResponseCode.SUCCESS)
+      .json({ data: admins, message: "Admins Fetched Successfully!" });
+  } catch (error) {
+    console.error("Error fetching admin:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ error: "Internal server error while Fetching admin." });
+  }
+};
+
+export const updateActiveStatusController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { isActive } = req.body;
+
+    if (!userId || typeof isActive !== "boolean") {
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ error: "Invalid request. userId and isActive are required." });
+      return;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { isActive },
+      { new: true, runValidators: true }
+    ).select("_id name email isActive role");
+
+    if (!updatedUser) {
+      res.status(ResponseCode.NOT_FOUND).json({ error: "User not found." });
+      return;
+    }
+
+    res.status(ResponseCode.SUCCESS).json({
+      message: "User active status updated successfully.",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error Updating Active Status:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ error: "Internal server error while Updating Active Status." });
+  }
+};
+
+
+export const getAllUsersController = async (req: Request, res: Response) => {
+  try {
+    const usersWithCrimeCount = await User.aggregate([
+      { $match: { role: "public" } },
+
+      {
+        $lookup: {
+          from: "crimereports",      // collection name of crime reports
+          localField: "_id",
+          foreignField: "reportedBy",
+          as: "crimeReports"
+        }
+      },
+
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          isActive: 1,
+          totalCrimesReported: { $size: "$crimeReports" },
+          crimes: {
+            $map: {
+              input: "$crimeReports",
+              as: "crime",
+              in: {
+                _id: "$$crime._id",
+                title: "$$crime.title",
+                type: "$$crime.type",
+                description: "$$crime.description",
+                datetime: "$$crime.datetime",
+                isVerified: "$$crime.isVerified",
+                location: "$$crime.location"
+              }
+            }
+          }
+        }
+      }
+    ]);
+
+    if (!usersWithCrimeCount || usersWithCrimeCount.length === 0) {
+      res
+        .status(ResponseCode.SUCCESS)
+        .json({ data: [], message: "No Users found." });
+      return;
+    }
+
+    res
+      .status(ResponseCode.SUCCESS)
+      .json({ data: usersWithCrimeCount, message: "Users Fetched Successfully!" });
+
+  } catch (error) {
+    console.error("Error Fetching All Users:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ error: "Internal Server Error" });
   }
 };
 

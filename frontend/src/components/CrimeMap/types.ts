@@ -1,4 +1,5 @@
 import { LatLngExpression, Icon } from "leaflet"
+import dynamic from "next/dynamic"
 import { ReactNode } from "react"
 
 export interface MapMarker {
@@ -22,19 +23,25 @@ export interface MapProps {
 }
 
 
-export type Crime = {
-  _id: string;
-  title: string;
-  type: string;
-  description: string;
-  location: {
-    type: string;
-    coordinates: [number, number]; // [lng, lat]
-  };
-  datetime: string;
-  reportedBy: {
-    name: string;
-    _id: string;
-    email: string;
-  };
-};
+// export type Crime = {
+//   _id: string;
+//   title: string;
+//   type: string;
+//   description: string;
+//   location: {
+//     type: string;
+//     coordinates: [number, number]; // [lng, lat]
+//   };
+//   datetime: string;
+//   reportedBy: {
+//     name: string;
+//     _id: string;
+//     email: string;
+//   };
+//   mediaUrl:Array<{url:string,_id:string,type:string}>;
+//   verificationStatus:string;
+//   verificationRemarks?:string;
+// };
+
+export const MarkerClusterGroup = dynamic(() => import("react-leaflet-markercluster"), { ssr: false });
+

@@ -8,6 +8,7 @@ interface Props {
 export default function MapClickHandler({ onClick }: Props) {
   useMapEvents({
     click(e) {
+      console.log(e.latlng," a")
       onClick?.(e.latlng.lat, e.latlng.lng);
     },
   });

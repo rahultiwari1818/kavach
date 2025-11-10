@@ -6,37 +6,71 @@
 
 ### 1.1 User Authentication & Authorization
 
-- The system must provide **secure registration and login** functionality for:
+- The system must provide **secure registration and login** for:
   - **Citizens**
   - **Administrators**
-- Enforce **role-based access control**:
-  - Citizens have limited access to reporting and viewing.
-  - Administrators have full access to crime management and verification.
+  - **Super Administrators**
+- Enforce **role-based access control (RBAC)**:
+  - **Citizen:** Can report and view crimes.
+  - **Admin:** Can verify/reject reported crimes and view analytics.
+  - **Super Admin:** Can manage admins (create, update, remove), view all audit logs, and access platform-wide settings.
+
+---
 
 ### 1.2 Crime Reporting
 
 - Citizens must be able to **report a crime** with the following details:
   - **Crime Type**
   - **Description**
-  - **Location** (via GPS or manual address input)
-  - **Optional Media Attachments** (images and/or videos)
+  - **Location** (via GPS or manual input)
+  - **Optional Media** (images/videos)
+- All reports will initially have a **status of “Pending”**.
 
-### 1.3 Crime Management & Verification
+---
 
-- Administrators must be able to:
-  - **View** reported crimes
-  - **Verify**, **Approve**, or **Reject** reports
-- Only **verified crimes** will:
-  - Appear on the public map
-  - Contribute to hotspot detection
+### 1.3 Crime Verification & Management
+
+- **Admins** can:
+  - View all **pending** reports.
+  - **Verify** or **Reject** reports.
+  - Add remarks or reasons during verification.
+- **Super Admins** can monitor admin performance and activity logs.
+
+---
 
 ### 1.4 Hotspot Detection & Visualization
 
 - The system must:
-  - Automatically **detect hotspots** based on geospatial clustering
-    - A **hotspot** is defined as an area with **≥10 crimes within a 1 km radius**
-  - Display hotspots on an **interactive map**
-    - Use **heatmap visualization** to show intensity of crime
+  - Automatically **detect hotspots** — defined as ≥10 verified crimes within a **1 km radius**.
+  - Display hotspots on an **interactive map (Leaflet.js)** using **heatmap visualization**.
+- Filters:
+  - By **crime type**
+  - By **date range**
+  - By **severity/frequency**
+
+---
+
+### 1.5 Admin Management (Super Admin Feature)
+
+- Super Admin can:
+  - Create new **Admin** accounts.
+  - Update or deactivate existing **Admins**.
+  - Access and filter **audit logs** for transparency and accountability.
+
+---
+
+### 1.6 Audit Logging
+
+- Every critical system event must be logged, including:
+  - **Report Creation** (Citizen)
+  - **Verification or Rejection** (Admin)
+  - **Admin Management Actions** (Super Admin)
+- Log fields include:
+  - Actor (User ID)
+  - Action
+  - Target Entity
+  - Timestamp
+  - Status/Remarks
 
 ---
 
@@ -44,15 +78,19 @@
 
 ### 2.1 Performance & Scalability
 
-- The system must support at least **1000 concurrent users** without performance degradation.
-- **Geospatial clustering queries** must return results within **3 seconds**.
+- The system must support **1000+ concurrent users** without performance degradation.
+- Geospatial clustering queries should complete within **3 seconds**.
+- Backend and database must be **horizontally scalable** on cloud infrastructure (AWS/GCP).
+
+---
 
 ### 2.2 Security
 
-- All sensitive data must be encrypted:
-  - Use **bcrypt** for password hashing
-  - Use **JWT (JSON Web Tokens)** for session management
-- The platform must use **HTTPS** for all data transmissions to ensure security.
+- Use **bcrypt** for password hashing.
+- Use **JWT tokens** for session management.
+- **Role-based authorization** for API protection.
+- **HTTPS** enforced for all endpoints.
+- Audit logs must be **immutable (append-only)**.
 
 ---
 
@@ -60,19 +98,29 @@
 
 ### 3.1 Citizen
 
-- As a **citizen**, I want to **register and log in securely**, so that I can access my account and report crimes.
-- As a **citizen**, I want to **report a crime** with a description, type, and location, so that authorities can be informed quickly.
-- As a **citizen**, I want to **upload images or videos** related to a crime, so that my report is more credible.
-- As a **citizen**, I want to **view verified crime reports on a map**, so that I can stay informed about crime in my area.
-- As a **citizen**, I want to **see hotspots highlighted on a map**, so that I can avoid high-risk areas.
+- As a **Citizen**, I want to **register/login securely**, so that I can access my account safely.
+- As a **Citizen**, I want to **report a crime** with a description, type, and location.
+- As a **Citizen**, I want to **upload images or videos** to strengthen my report.
+- As a **Citizen**, I want to **track my report statuses** (Pending, Verified, Rejected).
+- As a **Citizen**, I want to **view verified crimes and hotspots** near my area.
 
-### 3.2 Administrator
+---
 
-- As an **administrator**, I want to **log in with elevated access**, so that I can manage reported crimes.
-- As an **administrator**, I want to **view all reported crimes**, so that I can verify and take appropriate action.
-- As an **administrator**, I want to **approve or reject reported crimes**, so that only legitimate crimes are shown publicly.
-- As an **administrator**, I want the system to **automatically detect crime hotspots**, so that I can allocate resources efficiently.
-- As an **administrator**, I want to **see clusters and heatmaps**, so that I can visualize areas with high crime rates.
+### 3.2 Admin
+
+- As an **Admin**, I want to **view pending reports**, so that I can verify them quickly.
+- As an **Admin**, I want to **approve/reject reports** with proper remarks.
+- As an **Admin**, I want to **see real-time heatmaps**, so that I can identify critical areas.
+- As an **Admin**, I want to **access analytics dashboards** for decision-making.
+
+---
+
+### 3.3 Super Admin
+
+- As a **Super Admin**, I want to **create/manage admins** for different zones.
+- As a **Super Admin**, I want to **view all audit logs** to ensure accountability.
+- As a **Super Admin**, I want to **deactivate inactive or malicious admins**.
+- As a **Super Admin**, I want to **oversee all system operations** from one dashboard.
 
 ---
 
@@ -80,30 +128,24 @@
 
 ### 4.1 User Interface (UI) Requirements
 
-- Responsive web interface for desktops, tablets, and mobile devices.
+#### Citizen Interface
+- **Report Crime Form** with fields for type, description, location, and media upload.
+- **Report Tracker** showing status and timestamps.
+- **Interactive Map** with cluster and heatmap layers for visualization.
 
-#### Citizen Interface:
-- Crime Reporting Form:
-  - Dropdown for crime type
-  - Description text area
-  - GPS/manual map-based location selection
-  - Image/video upload (optional)
-- Interactive Map (Leaflet.js):
-  - Map markers for individual crimes
-  - Heat clusters for hotspots (≥10 crimes in 1 km)
-  - Filters by type/date
-- Report Tracker:
-  - Displays all submitted reports
-  - Shows real-time status (Pending, Verified, Rejected)
+#### Admin Dashboard
+- **Table View** of reports with filters (status/date/type).
+- **Action Buttons**: Verify / Reject / View Details.
+- **Heatmap Visualization** for hotspots.
+- **Color Legend:**
+  - Pending → Yellow
+  - Verified → Green
+  - Rejected → Red
 
-#### Admin Dashboard:
-- Table/list of reported crimes
-- Filters for status, date, location
-- Approve/Reject/Verify buttons
-- Status colors:
-  - Pending = Yellow
-  - Verified = Green
-  - Rejected = Red
+#### Super Admin Dashboard
+- **Admin Management Panel**: Add / Edit / Delete Admins.
+- **Audit Logs Viewer** with filters by user, date, or action.
+- **Global Overview Dashboard** with system statistics.
 
 ---
 
@@ -146,65 +188,34 @@
 
 ## 5. Acceptance Criteria
 
-### 5.1 User Authentication & Authorization
+### Authentication & Authorization
+- [ ] Citizens, Admins, and Super Admins can register/login securely.
+- [ ] Passwords hashed using bcrypt.
+- [ ] JWT tokens generated and verified on every protected route.
+- [ ] Role-based access enforced for every endpoint.
+- [ ] Unauthorized access denied.
 
-- [ ] Citizen can register with name, email, password, phone number
-- [ ] Passwords hashed using bcrypt
-- [ ] Login returns a valid JWT token
-- [ ] Admin login grants verification access
-- [ ] Unauthorized access is denied
+### Crime Reporting
+- [ ] Citizens can submit crime reports with media and location.
+- [ ] Crime reports saved in MongoDB with geospatial data.
+- [ ] Status updates reflected in user dashboard.
 
-### 5.2 Crime Reporting
+### Verification Workflow
+- [ ] Admins can verify/reject reports.
+- [ ] Every verification/rejection triggers an **audit log**.
+- [ ] Verified reports appear publicly on the map.
 
-- [ ] Citizens can report with:
-  - [ ] Crime type
-  - [ ] Description (20–500 chars)
-  - [ ] Location (GPS/manual)
-  - [ ] Media upload (optional)
-- [ ] Required fields validated
-- [ ] Report saved with geocoordinates in MongoDB
-- [ ] User can track their submitted reports and statuses
+### Hotspot Detection
+- [ ] Hotspots identified for ≥10 crimes within 1 km.
+- [ ] Clusters auto-refresh when new crimes are verified.
+- [ ] Map interaction time < 3 seconds.
 
-### 5.3 Crime Management (Admin)
-
-- [ ] Admin sees reports marked "Pending"
-- [ ] Admin can:
-  - [ ] Approve → changes to Verified
-  - [ ] Reject → marked Rejected
-- [ ] Verified crimes are publicly visible
-- [ ] Reporter notified on status change
-
-### 5.4 Hotspot Detection & Visualization
-
-- [ ] Hotspot triggered when ≥10 crimes within 1 km radius
-- [ ] Hotspots rendered as heat clusters
-- [ ] Auto-update on new verified crimes
-- [ ] Filters: crime type, date range
-- [ ] Clickable hotspots show summaries
-
-### 5.5 Performance & Scalability
-
-- [ ] Supports 1000+ concurrent users
-- [ ] Geo queries return ≤3s
-- [ ] Map renders up to 100k crimes without freezing
-
-### 5.6 Security
-
-- [ ] HTTPS enforced
-- [ ] JWT tokens expire (e.g., 1 hour)
-- [ ] bcrypt-secured passwords
-- [ ] Admin-only access to verification APIs
-- [ ] Uploaded files scanned for malicious content
-
-### 5.7 Usability
-
-- [ ] UI responsive on all screen sizes
-- [ ] Map supports zoom, pan, filter
-- [ ] Form inputs show error messages
-- [ ] Crime statuses are color-coded
+### Super Admin Features
+- [ ] Super Admin can manage Admin accounts.
+- [ ] Audit logs record all create/update/delete actions.
+- [ ] Logs cannot be edited or deleted manually.
 
 ---
-
 ## 6. Wireframe Design (PDF)
 
 📎 **Wireframe Attached:** [📄 Kavach_Wireframes.pdf](./assets/Kavach_UI_UX.pdf)
@@ -216,4 +227,3 @@
 - Admin Dashboard with verification panel
 
 ---
-

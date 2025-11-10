@@ -45,14 +45,30 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6">
-          {role === "admin" ? (
+          {role === "super-admin" ? (
             <>
-            <Link href="/admin/home" className="nav-link">
-               Home
-            </Link>
-            <Link href="/admin/verified-crime" className="nav-link">
-               Verified Crimes
-            </Link>
+              <Link href="/super-admin/home" className="nav-link">
+                Home
+              </Link>
+              <Link href="/super-admin/manage-admins" className="nav-link">
+                Manage Admins
+              </Link>
+              <Link href="/super-admin/manage-users" className="nav-link">
+                Manage Users
+              </Link>
+              
+              <Link href="/super-admin/verified-crime" className="nav-link">
+                Verified Crimes
+              </Link>
+            </>
+          ) : role === "admin" ? (
+            <>
+              <Link href="/admin/home" className="nav-link">
+                Home
+              </Link>
+              <Link href="/admin/verified-crime" className="nav-link">
+                Verified Crimes
+              </Link>
             </>
           ) : (
             <>
@@ -62,6 +78,10 @@ export default function Navbar() {
               <Link href="/public/crime-report" className="nav-link">
                 Report Crime
               </Link>
+              <Link href="/public/my-reported-crimes" className="nav-link">
+                View Reported Crimes
+              </Link>
+              
             </>
           )}
           <button
@@ -86,10 +106,31 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden mt-4 space-y-3 px-4">
-          {role === "admin" ? (
-            <Link href="/admin/home" className="block nav-link">
-              Admin Home
-            </Link>
+          {role === "super-admin" ? (
+            <>
+              <Link href="/super-admin/home" className="block nav-link">
+                Home
+              </Link>
+              <Link href="/super-admin/manage-admins" className="block nav-link">
+                Manage Admins
+              </Link>
+              <Link href="/super-admin/manage-users" className="block nav-link">
+                Manage Users
+              </Link>
+              
+              <Link href="/super-admin/verified-crime" className="block nav-link">
+                Verified Crimes
+              </Link>
+            </>
+          ) : role === "admin" ? (
+            <>
+              <Link href="/admin/home" className="block nav-link">
+                Home
+              </Link>
+              <Link href="/admin/verified-crime" className="block nav-link">
+                Verified Crimes
+              </Link>
+            </>
           ) : (
             <>
               <Link href="/public/home" className="block nav-link">
@@ -98,6 +139,10 @@ export default function Navbar() {
               <Link href="/public/crime-report" className="block nav-link">
                 Report Crime
               </Link>
+              <Link href="/public/my-reported-crimes" className="block nav-link">
+                View Reported Crimes
+              </Link>
+              
             </>
           )}
           <button

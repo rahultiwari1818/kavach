@@ -7,6 +7,8 @@ export interface MapMarker {
   icon?: Icon;
 }
 
+
+
 export interface CustomMapProps {
   center?: LatLngExpression;
   zoom?: number;
@@ -20,4 +22,7 @@ export interface CustomMapProps {
   showUserLocation?: boolean;
   userIcon?: Icon;
   onMapClick?: (lat: number, lng: number) => void;
+  heatPoints?:Array<[number,number,number]>;
+  crimeCount?:number;
+  radius?:number;
 }

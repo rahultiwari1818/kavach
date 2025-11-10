@@ -69,6 +69,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
         const role = Cookies.get("role");
         if (role === "admin") {
           router.push("/admin/home");
+        }
+        else if (role === "super-admin") {
+          router.push("/super-admin/home");
         } else {
           router.push("/public/home");
         }

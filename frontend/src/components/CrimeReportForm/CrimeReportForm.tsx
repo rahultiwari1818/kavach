@@ -32,7 +32,7 @@ export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const target = e.target as HTMLInputElement; // assert it is an input element
+    const target = e.target as HTMLInputElement;
     const { name, value, type, checked } = target;
     setData((prev) => ({
       ...prev,
@@ -57,21 +57,13 @@ export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
     formData.append("datetime", data.datetime);
     formData.append("anonymous", data.anonymous.toString());
 
-    // Append media files
-    if (media) {
-      // If media is a single file
-      if (media instanceof File) {
-        formData.append("media", media);
-      } else if (Array.isArray(media)) {
-        // If media is an array of files
-        media.forEach((file) => {
-          formData.append("media", file); // You can add index if needed: `media[${index}]`
-        });
-      }
+    if (Array.isArray(media)) {
+      media.forEach((file) => formData.append("media", file));
     }
+
     const res = await onSubmit(formData);
     if (res) {
-      setData(() => ({
+      setData({
         title: "",
         type: "theft",
         description: "",
@@ -79,164 +71,180 @@ export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
         longitude: "",
         datetime: "",
         anonymous: false,
-      }));
+      });
       setMedia([]);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmission}
-      className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow space-y-5"
-    >
-      <h2 className="text-2xl font-bold text-center">Report a Crime</h2>
+    <div className="relative min-h-screen py-6">
+      <div className="bg-image "></div> 
+      <div className="">
+      <form
+        onSubmit={handleSubmission}
+        className="max-w-xl mx-auto  p-6 rounded-lg shadow space-y-5  "
+      >
+        <h2 className="text-2xl font-bold text-center">Report a Crime</h2>
 
-      <div>
-        <label className="block font-semibold mb-1" htmlFor="title">
-          Title
-        </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          required
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          value={data.title}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-1" htmlFor="type">
-          Crime Type
-        </label>
-        <select
-          id="type"
-          name="type"
-          required
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          value={data.type}
-          onChange={handleChange}
-        >
-          {[
-            "theft",
-            "assault",
-            "fraud",
-            "murder",
-            "vandalism",
-            "cybercrime",
-            "domestic violence",
-            "drug-related",
-            "kidnapping",
-            "sexual harassment",
-            "homicide",
-            "burglary",
-            "vehicle theft",
-            "arson",
-            "terrorism",
-            "human trafficking",
-            "illegal possession",
-            "public disturbance",
-            "corruption",
-            "other",
-          ].map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-1" htmlFor="description">
-          Description
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          rows={4}
-          required
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          value={data.description}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-1">
-          Select Crime Location on Map
-        </label>
-        <div className=" h-72 border border-gray-300">
-          <CrimeLocationMap
-            location={{
-              lat: Number(data.latitude),
-              lng: Number(data.longitude),
-            }}
-            setLocation={(latlng) => {
-              setData((prev) => ({
-                ...prev,
-                latitude: latlng.lat.toString(),
-                longitude: latlng.lng.toString(),
-              }));
-            }}
+        {/* Title */}
+        <div>
+          <label className="block font-semibold mb-1" htmlFor="title">
+            Title
+          </label>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            placeholder="Enter a short title (e.g., Bike Theft)"
+            required
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            value={data.title}
+            onChange={handleChange}
           />
         </div>
-        <p className="my-1 ...">
-          Clicked coordinates:{" "}
-          {data.latitude && data.longitude
-            ? `${data.latitude}, ${data.longitude}`
-            : "None"}
-        </p>
-      </div>
 
-      <div>
-        <label className="block font-semibold mb-1" htmlFor="datetime">
-          Date & Time of Incident
-        </label>
-        <input
-          id="datetime"
-          name="datetime"
-          type="datetime-local"
-          required
-          className="w-full border border-gray-300 rounded px-3 py-2"
-          value={data.datetime}
-          onChange={handleChange}
-        />
-      </div>
+        {/* Type */}
+        <div>
+          <label className="block font-semibold mb-1" htmlFor="type">
+            Crime Type
+          </label>
+          <select
+            id="type"
+            name="type"
+            required
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            value={data.type}
+            onChange={handleChange}
+          >
+            {[
+              "theft",
+              "assault",
+              "fraud",
+              "murder",
+              "vandalism",
+              "cybercrime",
+              "domestic violence",
+              "drug-related",
+              "kidnapping",
+              "sexual harassment",
+              "homicide",
+              "burglary",
+              "vehicle theft",
+              "arson",
+              "terrorism",
+              "human trafficking",
+              "illegal possession",
+              "public disturbance",
+              "corruption",
+              "other",
+            ].map((t) => (
+              <option key={t} value={t}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div>
-        <label className="block font-semibold mb-1" htmlFor="mediaUrl">
-          Media Evidence
-        </label>
-        <input
-          type="file"
-          accept="image/*,video/*"
-          onChange={handleFileChange}
-          className="w-full mt-2"
-          multiple
-        />
-      </div>
+        {/* Description */}
+        <div>
+          <label className="block font-semibold mb-1" htmlFor="description">
+            Description
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows={4}
+            required
+            placeholder="Describe what happened..."
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            value={data.description}
+            onChange={handleChange}
+          />
+        </div>
 
-      <div className="flex items-center space-x-2">
-        <input
-          id="anonymous"
-          name="anonymous"
-          type="checkbox"
-          checked={data.anonymous}
-          onChange={handleChange}
-          className="h-4 w-4 text-blue-600"
-        />
-        <label htmlFor="anonymous" className="text-sm text-gray-700">
-          Submit anonymously
-        </label>
-      </div>
+        {/* Map */}
+        <div>
+          <label className="block font-semibold mb-1">
+            Select Crime Location on Map
+          </label>
+          <div className="h-72 border border-gray-300 rounded overflow-hidden">
+            <CrimeLocationMap
+              location={{
+                lat: data.latitude ? Number(data.latitude) : 20.5937, // Default India lat
+                lng: data.longitude ? Number(data.longitude) : 78.9629, // Default India lng
+              }}
+              setLocation={(latlng) => {
+                setData((prev) => ({
+                  ...prev,
+                  latitude: latlng.lat.toString(),
+                  longitude: latlng.lng.toString(),
+                }));
+              }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-gray-600">
+            Clicked coordinates:{" "}
+            {data.latitude && data.longitude
+              ? `${data.latitude}, ${data.longitude}`
+              : "None selected"}
+          </p>
+        </div>
 
-      <button
-        type="submit"
-        className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition"
-      >
-        Submit Report
-      </button>
-    </form>
+        {/* Datetime */}
+        <div>
+          <label className="block font-semibold mb-1" htmlFor="datetime">
+            Date & Time of Incident
+          </label>
+          <input
+            id="datetime"
+            name="datetime"
+            type="datetime-local"
+            required
+            className="w-full border border-gray-300 rounded px-3 py-2"
+            value={data.datetime}
+            onChange={handleChange}
+          />
+        </div>
+
+        {/* Media */}
+        <div>
+          <label className="block font-semibold mb-1" htmlFor="mediaUrl">
+            Media Evidence
+          </label>
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileChange}
+            className="w-full mt-2 text-sm"
+            multiple
+            placeholder="Upload images or videos as evidence"
+          />
+        </div>
+
+        {/* Anonymous checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            id="anonymous"
+            name="anonymous"
+            type="checkbox"
+            checked={data.anonymous}
+            onChange={handleChange}
+            className="h-4 w-4 text-blue-600"
+          />
+          <label htmlFor="anonymous" className="text-sm text-gray-700">
+            Submit anonymously
+          </label>
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition"
+        >
+          Submit Report
+        </button>
+      </form>
+      </div>
+    </div>
   );
 }

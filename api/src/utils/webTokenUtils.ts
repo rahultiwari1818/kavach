@@ -1,5 +1,5 @@
 import jsonwebtoken from "jsonwebtoken";
-import userToken from "../interfaces/userToken.interface";
+import userToken from "../interfaces/userToken.interface.js";
 
 const SECRET_KEY = String(process.env.SECRET_KEY);
 

@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 export default function ReportPage() {
   const handleCrimeSubmit = async (data: FormData): Promise<boolean> => {
     try {
-
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/report-crime`,
         data,
@@ -23,19 +22,20 @@ export default function ReportPage() {
         toast.warn("Unexpected response from server.");
       }
       return true;
-    } catch (error: any) {
-      if (error.response) {
-        // Backend error
-        toast.error(
-          `Error: ${error.response.data.message || "Something went wrong."}`
-        );
-      } else if (error.request) {
-        // No response
-        toast.error("No response from server.");
-      } else {
-        // Other error
-        toast.error("Request error: " + error.message);
-      }
+    } catch (error: unknown) {
+      if (error instanceof AxiosError)
+        if (error.response) {
+          // Backend error
+          toast.error(
+            `Error: ${error.response.data.message || "Something went wrong."}`
+          );
+        } else if (error.request) {
+          // No response
+          toast.error("No response from server.");
+        } else {
+          // Other error
+          toast.error("Request error: " + error.message);
+        }
     }
     return false;
   };

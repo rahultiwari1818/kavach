@@ -1,43 +1,12 @@
 import { Router } from "express";
-import { googleAuth, loginController, logoutController, registerController, verifyEmail,forgotPasswordSendOTP, forgotPassword } from "../controllers/users.controllers.js";
-import { loginValidations, registerValidations } from "../middlewares/validation-middlewares/userValidations.middleware.js";
+import { googleAuth, loginController, logoutController, registerController, verifyEmail,forgotPasswordSendOTP, forgotPassword, addAdminController,getAdminsController,updateActiveStatusController, getAllUsersController } from "../controllers/users.controllers.js";
+import { addAdminValidations, loginValidations, registerValidations } from "../middlewares/validation-middlewares/userValidations.middleware.js";
 import verifyOTPMiddleware from "../middlewares/verifyOTP.middleware.js";
+import { verifySuperAdmin } from "../middlewares/verifySuperAdmin.middleware.js";
+import { verifyAdmin } from "../middlewares/verifyAdmin.middleware.js";
 
 const router = Router();
 
-/**
- * @swagger
- * /api/v1/users/login:
- *   post:
- *     summary: User login
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: user@example.com
- *               password:
- *                 type: string
- *                 example: strongpassword123
- *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 token:
- *                   type: string
- *       401:
- *         description: Invalid credentials
- */
 
 
 router.post("/login",loginValidations, loginController);
@@ -59,5 +28,12 @@ router.post("/sendOTP",forgotPasswordSendOTP)
 
 router.post("/forgot-password",forgotPassword);
 
+router.post("/add-admin",verifySuperAdmin,addAdminValidations,addAdminController);
+
+router.get("/admins",verifySuperAdmin,getAdminsController);
+
+router.patch("/updateActiveStatus/:userId",verifySuperAdmin,updateActiveStatusController);
+
+router.get("/get-all-users",verifyAdmin,getAllUsersController);
 
 export default router;

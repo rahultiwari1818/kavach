@@ -68,3 +68,36 @@ export const registerValidations = (
     })
   }
 }
+
+export const addAdminValidations = (req: Request, res: Response, next: NextFunction) : void => {
+  const { name, email, password } = req.body;
+
+  const errors: string[] = [];
+
+  // Validate Name
+  if (!name || typeof name !== "string" || name.trim().length < 3) {
+    errors.push("Name must be at least 3 characters long.");
+  }
+
+  // Validate Email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || typeof email !== "string" || !emailRegex.test(email)) {
+    errors.push("A valid email address is required.");
+  }
+
+  // Validate Password
+  if (!password || typeof password !== "string" || password.length < 6) {
+    errors.push("Password must be at least 6 characters long.");
+  }
+
+  // If any validation fails
+  if (errors.length > 0) {
+     res.status(ResponseCode.BAD_REQUEST).json({ success: false, errors });
+  }
+
+  // Sanitize input (trim whitespace)
+  req.body.name = name.trim();
+  req.body.email = email.trim().toLowerCase();
+
+  next();
+};

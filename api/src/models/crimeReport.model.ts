@@ -1,5 +1,5 @@
-import { Schema, model } from "mongoose";
-import CrimeReport from "../interfaces/crimeReport.interface";
+import { Schema, model, InferSchemaType } from "mongoose";
+import CrimeReport from "../interfaces/crimeReport.interface.js";
 
 const crimeReportSchema = new Schema<CrimeReport>(
   {
@@ -31,48 +31,45 @@ const crimeReportSchema = new Schema<CrimeReport>(
       ],
     },
     description: { type: String, required: true },
-
     location: {
       type: {
         type: String,
         enum: ["Point"],
         default: "Point",
-        required:true
-      },
-      coordinates: {
-        type: [Number], // [longitude, latitude]
         required: true,
       },
+      coordinates: { type: [Number], required: true },
     },
-
     datetime: { type: Date, required: true },
-
     mediaUrl: [
       {
         url: { type: String },
         type: { type: String },
       },
     ],
-
     anonymous: { type: Boolean, required: true },
-
-    reportedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+    reportedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    verificationStatus: { type: String,
       required: true,
-    },
-    isVerified:{
-      required:true,
-      type:Boolean,
-      default:false
+      enum: [
+        "verified" , "pending" , "rejected"
+      ],
+    default:"pending"
+   },
+    verifiedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    verificationRemarks:{
+      type:String,
+      default:""
     }
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Index required for geospatial queries
 crimeReportSchema.index({ location: "2dsphere" });
 
-export default model<CrimeReport>("CrimeReport", crimeReportSchema);
+// Infer the actual schema type
+type CrimeReportDoc = InferSchemaType<typeof crimeReportSchema>;
+
+const CrimeReportModel = model<CrimeReportDoc>("CrimeReport", crimeReportSchema);
+
+export default CrimeReportModel;

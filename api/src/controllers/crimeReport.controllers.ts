@@ -64,56 +64,103 @@ export const crimeReportController = async (
   }
 };
 
-export const getNearbyCrimes = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+// controllers/crimeController.ts
+
+export const getNearbyCrimes = async (req: Request, res: Response): Promise<void> => {
   try {
     const lat = parseFloat(req.query.lat as string);
     const lng = parseFloat(req.query.lng as string);
+    const radius = parseFloat(req.query.radius as string) || 3000;
+    const type = (req.query.type as string) || "All";
+    const time = (req.query.time as string) || "7d"; // default: past 7 days
 
     if (isNaN(lat) || isNaN(lng)) {
-      res
-        .status(ResponseCode.BAD_REQUEST)
-        .json({ message: "Invalid or missing latitude/longitude" });
+      res.status(ResponseCode.BAD_REQUEST).json({
+        message: "Invalid or missing latitude/longitude",
+      });
+      return;
     }
 
+    // 🕒 Construct match filter
+    const matchFilter: any = {verificationStatus:"verified"};
+
+    // 🔹 Filter by type (ignore if 'All')
+    if (type && type !== "All") {
+      matchFilter.type = { $regex: new RegExp(type, "i") };
+    }
+
+    // 🔹 Compute time filter
+    const now = new Date();
+    const from = new Date();
+
+    switch (time) {
+      case "24h":
+        from.setDate(now.getDate() - 1);
+        break;
+      case "7d":
+        from.setDate(now.getDate() - 7);
+        break;
+      case "30d":
+        from.setDate(now.getDate() - 30);
+        break;
+      case "60d":
+        from.setDate(now.getDate() - 60);
+        break;
+      case "quarter":
+        from.setMonth(now.getMonth() - 3);
+        break;
+      case "half":
+        from.setMonth(now.getMonth() - 6);
+        break;
+      case "1y":
+        from.setFullYear(now.getFullYear() - 1);
+        break;
+      case "All":
+      default:
+        // No time filter
+        break;
+    }
+
+    if (time !== "All") {
+      matchFilter.datetime = { $gte: from, $lte: now };
+    }
+
+    // 📍 Geo + Lookup Aggregation
     const crimes = await CrimeReportModel.aggregate([
       {
         $geoNear: {
           near: { type: "Point", coordinates: [lng, lat] },
           distanceField: "distance",
-          maxDistance: 3000, // in meters
+          maxDistance: radius, // meters
           spherical: true,
-          query: { isVerified: true },
+          query: matchFilter,
         },
       },
       {
         $lookup: {
-          from: "users", // name of your user collection (usually lowercase plural of model)
+          from: "users",
           localField: "reportedBy",
           foreignField: "_id",
           as: "reportedBy",
         },
       },
-      {
-        $unwind: "$reportedBy",
-      },
-      {
-        $unset: "reportedBy.password", // ✅ removes password from populated user
-      },
+      { $unwind: "$reportedBy" },
+      { $unset: "reportedBy.password" },
+      { $sort: { datetime: -1 } },
     ]);
 
-    res
-      .status(ResponseCode.SUCCESS)
-      .json({ data: crimes, message: "Crimes Data Successfully Fetched" });
+    res.status(ResponseCode.SUCCESS).json({
+      data: crimes,
+      message: "Nearby crimes fetched successfully",
+    });
   } catch (err) {
     console.error("Error fetching nearby crimes:", err);
-    res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ error: "Internal Server Error.!" });
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
   }
 };
+
 
 export const getMyCrimeReports = async (req: Request, res: Response) => {
   try {
@@ -135,7 +182,7 @@ export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
   try {
     const crimes = await CrimeReportModel.aggregate([
       {
-        $match: { isVerified: false }, // 🔍 only unverified crimes
+        $match: { verificationStatus: "pending" }, // 🔍 only unverified crimes
       },
       {
         $lookup: {
@@ -162,13 +209,34 @@ export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
   }
 };
 
-
 export const getAllverifiedCrimes = async (req: Request, res: Response) => {
   try {
+    const { type, fromDate } = req.query;
+
+    const matchFilter: any = { verificationStatus: "verified" };
+
+    // 🔹 Filter by type (case-insensitive)
+    if (type) {
+      matchFilter.type = { $regex: new RegExp(type.toString(), "i") };
+    }
+
+    // 🔹 Date filter: from 'fromDate' (or last 7 days) to now
+    const now = new Date();
+    const from =
+      fromDate && fromDate !== "all"
+        ? new Date(fromDate as string)
+        : new Date(now);
+    if (!fromDate) from.setDate(now.getDate() - 7); // default: past 7 days
+
+    if (fromDate && fromDate !== "all") {
+      matchFilter.datetime = {
+        $gte: from,
+        $lte: now,
+      };
+    }
+
     const crimes = await CrimeReportModel.aggregate([
-      {
-        $match: { isVerified: true }, // 🔍 only unverified crimes
-      },
+      { $match: matchFilter },
       {
         $lookup: {
           from: "users",
@@ -177,17 +245,34 @@ export const getAllverifiedCrimes = async (req: Request, res: Response) => {
           as: "reportedBy",
         },
       },
+      { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: true } },
       {
-        $unwind: "$reportedBy",
+        $lookup: {
+          from: "users",
+          localField: "verifiedBy",
+          foreignField: "_id",
+          as: "verifiedBy",
+        },
       },
+      { $unwind: { path: "$verifiedBy", preserveNullAndEmptyArrays: true } },
       {
-        $unset: "reportedBy.password", // 🛡️ remove password field
+        $project: {
+          "reportedBy.password": 0,
+          "verifiedBy.password": 0,
+          "reportedBy.__v": 0,
+          "verifiedBy.__v": 0,
+        },
       },
+      { $sort: { datetime: -1 } },
     ]);
 
-    res.status(ResponseCode.SUCCESS).json({ data: crimes });
+    res.status(ResponseCode.SUCCESS).json({
+      data: crimes,
+      message: "Verified crimes (default: past 7 days)",
+      filters: matchFilter,
+    });
   } catch (error) {
-    console.error("Getting Unverified Crime Error:", error);
+    console.error("Error fetching verified crimes:", error);
     res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
       message: "Internal Server Error",
     });
@@ -197,18 +282,19 @@ export const getAllverifiedCrimes = async (req: Request, res: Response) => {
 export const changeVerificationStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status,remarks } = req.body;
 
-    if (!id || typeof status !== "boolean") {
+    if (!id || typeof status !== "string" || typeof remarks !== "string") {
       res.status(ResponseCode.BAD_REQUEST).json({
-        message: "Crime ID and status (boolean) are required",
+        message: "Crime ID and status ,remarks are required",
       });
       return;
     }
 
     const crime = await CrimeReportModel.findByIdAndUpdate(
       id,
-      { isVerified: status },
+      { verificationStatus: status,verificationRemarks:remarks, verifiedBy: req.user?._id },
+
       { new: true }
     );
 
@@ -238,13 +324,16 @@ export const getCrimeClusters = async (req: Request, res: Response) => {
     const radiusInMeters = 1000;
     const minClusterSize = 10;
 
-    const allCrimes : CrimeReport[] = await CrimeReportModel.find({}, { location: 1 });
+    const allCrimes = (await CrimeReportModel.find(
+      {},
+      { location: 1 }
+    )) as CrimeReport[];
 
     const visited = new Set();
     const clusters: any[] = [];
 
     for (let i = 0; i < allCrimes.length; i++) {
-      if (visited.has(allCrimes[i]._id.toString())) continue;
+      if (visited.has(allCrimes[i]?._id.toString())) continue;
 
       const centerCrime = allCrimes[i];
       const nearbyCrimes = await CrimeReportModel.find({
@@ -256,12 +345,12 @@ export const getCrimeClusters = async (req: Request, res: Response) => {
         },
       });
 
-      const clusterCrimes = nearbyCrimes.filter(c =>
-        !visited.has(c._id.toString())
+      const clusterCrimes = nearbyCrimes.filter(
+        (c) => !visited.has(c._id.toString())
       );
 
       if (clusterCrimes.length >= minClusterSize) {
-        clusterCrimes.forEach(c => visited.add(c._id.toString()));
+        clusterCrimes.forEach((c) => visited.add(c._id.toString()));
         const avgLat =
           clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[1], 0) /
           clusterCrimes.length;
@@ -272,7 +361,7 @@ export const getCrimeClusters = async (req: Request, res: Response) => {
         clusters.push({
           center: { lat: avgLat, lng: avgLng },
           count: clusterCrimes.length,
-          crimes: clusterCrimes.map(c => ({
+          crimes: clusterCrimes.map((c) => ({
             id: c._id,
             lat: c.location.coordinates[1],
             lng: c.location.coordinates[0],
@@ -284,6 +373,8 @@ export const getCrimeClusters = async (req: Request, res: Response) => {
     res.status(200).json({ clusters });
   } catch (err) {
     console.error("Error clustering crimes:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ error: "Internal Server Error" });
   }
 };

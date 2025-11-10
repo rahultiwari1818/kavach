@@ -1,6 +1,7 @@
-import { Document, Types } from "mongoose";
+// src/interfaces/crimeReport.interface.ts
+import { Types, Document } from "mongoose";
 
-export default interface CrimeReport extends Document {
+export default interface CrimeReport {
   title: string;
   type:
     | "theft"
@@ -26,7 +27,7 @@ export default interface CrimeReport extends Document {
   description: string;
   location: {
     type: "Point";
-    coordinates: [number, number]; // [lng, lat]
+    coordinates: [number, number];
   };
   datetime: Date;
   mediaUrl?: Array<{
@@ -35,7 +36,9 @@ export default interface CrimeReport extends Document {
   }>;
   anonymous: boolean;
   reportedBy: Types.ObjectId;
+  verifiedBy: Types.ObjectId | null;
+  verificationStatus: "verified" | "pending" | "rejected";
   createdAt?: Date;
   updatedAt?: Date;
-  isVerified:boolean;
+  verificationRemarks?:string;
 }

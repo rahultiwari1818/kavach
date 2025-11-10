@@ -17,7 +17,7 @@ export const verifyAdmin =  (
     }
     const user = verifyToken(authToken);
 
-    if (user.role !== "admin") {
+    if (user.role !== "admin" && user.role !== "super-admin") {
       res
         .status(ResponseCode.UNAUTHORIZED)
         .json({ message: "Login as Admin to use this feature.!" });
