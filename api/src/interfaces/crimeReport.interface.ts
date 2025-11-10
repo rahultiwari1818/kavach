@@ -2,6 +2,7 @@
 import { Types, Document } from "mongoose";
 
 export default interface CrimeReport {
+   _id?: Types.ObjectId;
   title: string;
   type:
     | "theft"

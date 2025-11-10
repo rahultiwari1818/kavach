@@ -333,7 +333,7 @@ export const getCrimeClusters = async (req: Request, res: Response) => {
     const clusters: any[] = [];
 
     for (let i = 0; i < allCrimes.length; i++) {
-      if (visited.has(allCrimes[i]?._id.toString())) continue;
+      if (visited.has(allCrimes[i]._id?.toString())) continue;
 
       const centerCrime = allCrimes[i];
       const nearbyCrimes = await CrimeReportModel.find({
