@@ -62,7 +62,7 @@ export default function UserDetailsDialog({
     }
   };
 
-  // ✅ Only return null *after* all hooks
+  // Only return null *after* all hooks
   if (!localUser) return null;
 
   return (

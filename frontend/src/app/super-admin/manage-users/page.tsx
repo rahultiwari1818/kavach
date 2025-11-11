@@ -132,7 +132,7 @@ export default function Page() {
 
       {/* USER DETAILS DIALOG */}
       <UserDetailsDialog
-        key={selectedUser?._id || "no-user"} // 👈 forces re-render when user changes
+        key={selectedUser?._id || "no-user"} // forces re-render when user changes
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         user={selectedUser}

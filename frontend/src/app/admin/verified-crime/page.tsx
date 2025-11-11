@@ -19,7 +19,7 @@ const userIcon = new Icon({
   iconAnchor: [12, 41],
 });
 
-// 🔹 Enum of crime types
+// Enum of crime types
 const CRIME_TYPES = [
   "All",
   "theft",
@@ -44,7 +44,7 @@ const CRIME_TYPES = [
   "other",
 ];
 
-// 🔹 Time filter options
+// Time filter options
 const TIME_OPTIONS = [
   { value: "24h", label: "Last 24 Hours" },
   { value: "7d", label: "Last 7 Days" },

@@ -18,12 +18,12 @@ export function middleware(request: NextRequest) {
   const isUserRoute = userProtectedRoutes.some(path => pathname.startsWith(path));
   const isAdminRoute = adminProtectedRoutes.some(path => pathname.startsWith(path));
 
-  // 🔐 Not logged in but trying to access protected area
+  // Not logged in but trying to access protected area
   if ((isUserRoute || isAdminRoute) && !token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 🔁 Already logged in but accessing login/register — redirect to role-specific home
+  // Already logged in but accessing login/register — redirect to role-specific home
   if (isPublic && token) {
     if (role === 'admin') {
       return NextResponse.redirect(new URL('/admin/home', request.url));
@@ -36,13 +36,13 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 🚫 Admin trying to access user area — block
+  // Admin trying to access user area — block
   if (isUserRoute && role === 'admin') {
     return NextResponse.redirect(new URL('/admin/home', request.url));
   }
 
 
-  // 🚫 User trying to access admin area — block
+  //  User trying to access admin area — block
   if (isAdminRoute && role === 'public') {
     return NextResponse.redirect(new URL('/public/home', request.url));
   }
