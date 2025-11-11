@@ -4,11 +4,11 @@
 import { useCallback, useEffect, useState } from "react";
 import axios, { AxiosError } from "axios";
 import { toast } from "react-toastify";
-import Map from "@/components/Map/Map";
 import { Icon } from "leaflet";
 import GeneratePopUpContent from "@/components/Map/GeneratePopUpContent";
 import { Crime } from "@/Types/crime";
 import Overlay from "@/components/Overlay/Overlay";
+import dynamic from "next/dynamic";
 
 
 
@@ -18,6 +18,7 @@ const userIcon = new Icon({
   iconAnchor: [12, 41],
 });
 
+const Map = dynamic(() => import('@/components/Map/Map'), { ssr: false });
 
 
 export default function AdminCrimesPage() {

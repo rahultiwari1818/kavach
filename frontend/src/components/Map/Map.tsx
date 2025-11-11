@@ -32,7 +32,7 @@ function FlyToLocation({ location ,zoom}: { location: [number, number] | null,zo
 
 function MapComponent({
   center = [20.5937, 78.9629], // Default India center
-  zoom = 13,
+  zoom = 15,
   markers = [],
   tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   height = "80vh",
