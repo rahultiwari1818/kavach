@@ -10,6 +10,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import Image from "next/image";
 import Cookies from "js-cookie";
 import ForgotPasswordDialog from "../ForgotPasswordDialog/ForgotPasswordDialog";
+import Overlay from "../Overlay/Overlay";
 
 type AuthStep = "form" | "otp";
 type AuthMode = "login" | "register";
@@ -27,17 +28,17 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [isOpenForgotPassWordDialog, setIsOpenForgotPasswordDialog] =
     useState(false);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const router = useRouter();
 
   const openForgotPasswordDialog = () => {
     setIsOpenForgotPasswordDialog(true);
-   
   };
 
   const closeForgotPasswordDialog = useCallback(() => {
     setIsOpenForgotPasswordDialog(false);
   }, []);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,32 +46,39 @@ export default function AuthForm({ mode }: AuthFormProps) {
     if (mode === "register") {
       if (step === "form") {
         try {
+          setIsLoading(true);
           const res = await axios.post(
             `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/verify-email`,
             { email },
             { withCredentials: true }
           );
+
+          setIsLoading(false);
           toast.success(res.data.message || "OTP sent to your email.");
           setStep("otp");
         } catch (err) {
           const error = err as AxiosError<{ message: string }>;
           if (error.response) toast.error(error.response.data.message);
+        } finally {
+          setIsLoading(false);
         }
         return;
       }
 
       try {
+        setIsLoading(true);
         await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/register`,
           { name, email, password, otp },
           { withCredentials: true }
         );
+
+        setIsLoading(false);
         toast.success("Registration successful!");
         const role = Cookies.get("role");
         if (role === "admin") {
           router.push("/admin/home");
-        }
-        else if (role === "super-admin") {
+        } else if (role === "super-admin") {
           router.push("/super-admin/home");
         } else {
           router.push("/public/home");
@@ -78,9 +86,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
       } catch (err) {
         const error = err as AxiosError<{ message: string }>;
         if (error.response) toast.error(error.response.data.message);
+      } finally {
+        setIsLoading(false);
       }
     } else {
       try {
+        setIsLoading(true);
         await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/login`,
           { email, password },
@@ -95,6 +106,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
       } catch (err) {
         const error = err as AxiosError<{ message: string }>;
         if (error.response) toast.error(error.response.data.message);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -131,6 +144,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
   return (
     <>
+      <Overlay open={isLoading} />
       <div className="min-h-screen flex items-center justify-center bg-gray-100 relative">
         <div className="bg-image"></div>
 

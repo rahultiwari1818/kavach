@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { Icon } from "leaflet";
 import GeneratePopUpContent from "@/components/Map/GeneratePopUpContent";
 import { Crime } from "@/Types/crime";
+import Overlay from "@/components/Overlay/Overlay";
 
 const MapView = dynamic(() => import("@/components/Map/Map"), { ssr: false });
 
@@ -163,7 +164,7 @@ export default function AdminCrimesPage() {
 
       {/* 🗺️ Map */}
       {loading ? (
-        <p>Loading...</p>
+        <Overlay open={loading}/>
       ) : (
         <MapView
           markers={crimes.map((crime) => ({

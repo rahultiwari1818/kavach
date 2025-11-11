@@ -9,6 +9,7 @@ import CustomMap from "@/components/Map/Map";
 import GeneratePopUpContent from "../Map/GeneratePopUpContent";
 import { debounce } from "@/utils/generalUtils";
 import { Crime } from "@/Types/crime";
+import Overlay from "../Overlay/Overlay";
 
 const userIcon = new Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -59,7 +60,9 @@ const TIME_OPTIONS = [
 
 // { role }: { role?: string }
 export default function CrimeMap() {
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(
+    null
+  );
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [crimeCount, setCrimeCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -75,36 +78,44 @@ export default function CrimeMap() {
 
   const debouncedFetch = useMemo(
     () =>
-      debounce(async (lat: number, lng: number, radius: number, type: string, time: string) => {
-        try {
-          const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/nearby`,
-            { params: { lat, lng, radius, type, time }, withCredentials: true }
-          );
-          const crimes = res.data.data || [];
-          setCrimeCount(crimes.length);
+      debounce(
+        async (
+          lat: number | string,
+          lng: number | string ,
+          radius: number | string,
+          type: number | string,
+          time: number | string
+        ) => {
+          try {
+            const res = await axios.get(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/nearby`,
+              {
+                params: { lat, lng, radius, type, time },
+                withCredentials: true,
+              }
+            );
+            const crimes = res.data.data || [];
+            setCrimeCount(crimes.length);
 
-          const crimeMarkers: MapMarker[] = crimes.map((crime: Crime) => {
-            const [lng, lat] = crime.location.coordinates;
-            return {
-              id: crime._id,
-              position: [lat, lng],
-              popupContent: (
-                <GeneratePopUpContent
-                  crime={crime}
-                />
-              ),
-              icon: crimeIcon,
-            };
-          });
+            const crimeMarkers: MapMarker[] = crimes.map((crime: Crime) => {
+              const [lng, lat] = crime.location.coordinates;
+              return {
+                id: crime._id,
+                position: [lat, lng],
+                popupContent: <GeneratePopUpContent crime={crime} />,
+                icon: crimeIcon,
+              };
+            });
 
-          setMarkers(crimeMarkers);
-        } catch (err) {
-          console.error("Error fetching nearby crimes", err);
-        } finally {
-          setLoading(false);
-        }
-      }, 500),
+            setMarkers(crimeMarkers);
+          } catch (err) {
+            console.error("Error fetching nearby crimes", err);
+          } finally {
+            setLoading(false);
+          }
+        },
+        500
+      ),
     []
   );
 
@@ -124,11 +135,17 @@ export default function CrimeMap() {
 
   useEffect(() => {
     if (userLocation) {
-      debouncedFetch(userLocation[0], userLocation[1], radius, selectedType, selectedTime);
+      debouncedFetch(
+        userLocation[0],
+        userLocation[1],
+        radius,
+        selectedType,
+        selectedTime
+      );
     }
   }, [radius, selectedType, selectedTime]);
 
-  if (loading || !userLocation) return <div>Loading map...</div>;
+  // if (loading || !userLocation) return <div>Loading map...</div>;
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -195,16 +212,20 @@ export default function CrimeMap() {
 
       {/* Map Section */}
       <div className="w-full mt-6">
-        <CustomMap
-          showUserLocation
-          zoom={zoom}
-          markers={markers}
-          height="75vh"
-          userIcon={userIcon}
-          tileUrl="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          crimeCount={crimeCount}
-          radius={radius}
-        />
+        {loading ? (
+          <Overlay open={loading} />
+        ) : (
+          <CustomMap
+            showUserLocation
+            zoom={zoom}
+            markers={markers}
+            height="75vh"
+            userIcon={userIcon}
+            tileUrl="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            crimeCount={crimeCount}
+            radius={radius}
+          />
+        )}
       </div>
     </div>
   );

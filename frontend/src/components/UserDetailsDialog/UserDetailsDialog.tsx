@@ -63,7 +63,7 @@ export default function UserDetailsDialog({
     setStatusLoading(true);
 
     try {
-      const res = await axios.patch(
+       await axios.patch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/updateActiveStatus/${localUser._id}`,
         { isActive: newStatus },
         { withCredentials: true }

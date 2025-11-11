@@ -4,31 +4,13 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Crime } from "@/Types/crime";
-
-// interface Media {
-//   _id: string;
-//   url: string;
-//   type: string; // "image" | "video"
-// }
-
-// interface Crime {
-//   _id: string;
-//   title: string;
-//   type: string;
-//   description: string;
-//   datetime: string;
-//   verificationStatus:string;
-//   mediaUrl: Media[];
-//   location: {
-//     type: string;
-//     coordinates: [number, number];
-//   };
-//   verificationRemarks?:string;
-// }
+import CrimeDetailsDialog from "@/components/CrimeDetailsDialog/CrimeDetailsDialog"; // Assuming this file path
 
 export default function MyReportedCrimesPage() {
   const [crimes, setCrimes] = useState<Crime[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCrime, setSelectedCrime] = useState<Crime | null>(null); // For storing the selected crime
+  const [dialogOpen, setDialogOpen] = useState(false); // To manage dialog visibility
 
   const fetchMyReports = async () => {
     try {
@@ -48,6 +30,16 @@ export default function MyReportedCrimesPage() {
   useEffect(() => {
     fetchMyReports();
   }, []);
+
+  const handleOpenDialog = (crime: Crime) => {
+    setSelectedCrime(crime);  // Set selected crime
+    setDialogOpen(true);      // Open the dialog
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);  // Close the dialog
+    setSelectedCrime(null); // Reset selected crime
+  };
 
   if (loading)
     return (
@@ -78,73 +70,49 @@ export default function MyReportedCrimesPage() {
               <th className="p-3">Description</th>
               <th className="p-3 text-center">Date & Time</th>
               <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-center">Media</th>
+              <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {crimes.map((crime) => (
-              <tr
-                key={crime._id}
-                className="border-b hover:bg-gray-50 transition-all"
-              >
+              <tr key={crime._id} className="border-b hover:bg-gray-50 transition-all">
                 <td className="p-3 font-medium text-gray-800">{crime.title}</td>
                 <td className="p-3 capitalize">{crime.type}</td>
-                <td className="p-3 text-gray-600 line-clamp-2">
-                  {crime.description}
-                </td>
+                <td className="p-3 text-gray-600 line-clamp-2">{crime.description}</td>
                 <td className="p-3 text-center text-sm text-gray-500">
                   {new Date(crime.datetime).toLocaleString()}
                 </td>
                 <td className="p-3 text-center font-semibold">
                   {crime.verificationStatus === "verified" ? (
                     <span className="text-green-600">Verified</span>
-                  ) :
-                  crime.verificationStatus === "pending"
-                  ?
-                  (
+                  ) : crime.verificationStatus === "pending" ? (
                     <span className="text-yellow-600">Pending</span>
-                  )
-                  :
-                  (
+                  ) : (
                     <span className="text-red-600">Rejected</span>
                   )}
                 </td>
                 <td className="p-3 text-center">
-                  {crime.mediaUrl && crime.mediaUrl.length > 0 ? (
-                    <details className="cursor-pointer">
-                      <summary className="text-blue-600 hover:underline">
-                        View ({crime.mediaUrl.length})
-                      </summary>
-                      <div className="mt-2 flex flex-col items-center gap-2">
-                        {crime.mediaUrl.map((media) =>
-                          media.type === "image" ? (
-                            <img
-                              key={media._id}
-                              src={media.url}
-                              alt="crime-media"
-                              className="w-32 h-32 object-cover rounded-lg border"
-                            />
-                          ) : (
-                            <video
-                              key={media._id}
-                              controls
-                              className="w-32 h-32 rounded-lg border"
-                            >
-                              <source src={media.url} type="video/mp4" />
-                            </video>
-                          )
-                        )}
-                      </div>
-                    </details>
-                  ) : (
-                    <span className="text-gray-400">No Media</span>
-                  )}
+                  <button
+                    onClick={() => handleOpenDialog(crime)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    View Details
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Dialog to show Crime Details */}
+      {selectedCrime && (
+        <CrimeDetailsDialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          crime={selectedCrime}
+        />
+      )}
     </div>
   );
 }

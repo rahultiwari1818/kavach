@@ -8,6 +8,7 @@ import Map from "@/components/Map/Map";
 import { Icon } from "leaflet";
 import GeneratePopUpContent from "@/components/Map/GeneratePopUpContent";
 import { Crime } from "@/Types/crime";
+import Overlay from "@/components/Overlay/Overlay";
 
 
 
@@ -49,7 +50,7 @@ export default function AdminCrimesPage() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Admin – Verify Crimes on Map</h1>
       {loading ? (
-        <p>Loading...</p>
+        <Overlay open={loading}/>
       ) : (
         <Map
           markers={crimes.map((crime) => ({
@@ -60,10 +61,11 @@ export default function AdminCrimesPage() {
             ],
             popupContent:<GeneratePopUpContent crime={crime} fetchUnverifiedCrimes={fetchUnverifiedCrimes}/>
           }))}
-          zoom={13}
+          zoom={15}
           tileUrl="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           userIcon={userIcon}
           showUserLocation={true}
+          height="85vh"
           
         />
       )}

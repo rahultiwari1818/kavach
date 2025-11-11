@@ -32,7 +32,7 @@ export default function Dialog({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative"
+            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative max-h-[80vh] overflow-scroll"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}

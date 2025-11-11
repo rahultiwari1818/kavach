@@ -3,6 +3,8 @@ import CrimeReportModel from "../models/crimeReport.model.js";
 import { ResponseCode } from "../utils/responseCode.enum.js";
 import { uploadToCloudinary } from "../config/cloudinary.config.js";
 import CrimeReport from "../interfaces/crimeReport.interface.js";
+import { appEventEmitter } from "../patterns/observers/eventEmitter.js";
+import { CrimeVerificationContext } from "../patterns/state/CrimeVerificationContext.js";
 
 export const crimeReportController = async (
   req: Request,
@@ -66,7 +68,10 @@ export const crimeReportController = async (
 
 // controllers/crimeController.ts
 
-export const getNearbyCrimes = async (req: Request, res: Response): Promise<void> => {
+export const getNearbyCrimes = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const lat = parseFloat(req.query.lat as string);
     const lng = parseFloat(req.query.lng as string);
@@ -82,7 +87,7 @@ export const getNearbyCrimes = async (req: Request, res: Response): Promise<void
     }
 
     // 🕒 Construct match filter
-    const matchFilter: any = {verificationStatus:"verified"};
+    const matchFilter: any = { verificationStatus: "verified" };
 
     // 🔹 Filter by type (ignore if 'All')
     if (type && type !== "All") {
@@ -160,7 +165,6 @@ export const getNearbyCrimes = async (req: Request, res: Response): Promise<void
     });
   }
 };
-
 
 export const getMyCrimeReports = async (req: Request, res: Response) => {
   try {
@@ -282,40 +286,38 @@ export const getAllverifiedCrimes = async (req: Request, res: Response) => {
 export const changeVerificationStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status,remarks } = req.body;
+    const { status, remarks } = req.body;
+    const userId = req.user?._id;
 
-    if (!id || typeof status !== "string" || typeof remarks !== "string") {
-      res.status(ResponseCode.BAD_REQUEST).json({
-        message: "Crime ID and status ,remarks are required",
-      });
-      return;
-    }
-
-    const crime = await CrimeReportModel.findByIdAndUpdate(
-      id,
-      { verificationStatus: status,verificationRemarks:remarks, verifiedBy: req.user?._id },
-
-      { new: true }
-    );
-
+    const crime = await CrimeReportModel.findById(id);
     if (!crime) {
-      res.status(ResponseCode.NOT_FOUND).json({
-        message: "Crime report not found",
-      });
+      res.status(ResponseCode.NOT_FOUND).json({ message: "Crime not found" });
       return;
     }
+
+    const context = new CrimeVerificationContext(id, crime.verificationStatus);
+
+    if (status === "verify") await context.getState().verify();
+    else if (status === "reject") await context.getState().reject();
+
+    // Emit Audit Event
+    appEventEmitter.emit("crime_verification_updated", {
+      performedBy: userId,
+      crimeId: id,
+      newStatus: status,
+      remarks,
+      ipAddress: req.ip,
+    });
 
     res.status(ResponseCode.SUCCESS).json({
-      message: `Crime report has been ${
-        status ? "verified" : "unverified"
-      } successfully`,
-      crime,
+      message: `Crime marked as ${status}`,
+      status: context.getState().getStatus(),
     });
   } catch (error: any) {
-    console.error("Changing Verification Status Error:", error.message);
-    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
-      message: "Internal Server Error",
-    });
+    console.error("Crime verification error:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message || "Internal Server Error" });
   }
 };
 

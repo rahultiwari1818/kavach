@@ -20,5 +20,5 @@ export interface Crime {
   };
   reportedBy: UserRes;
   verifiedBy: UserRes | null;
-  mediaUrl?: Media[];
+  mediaUrl: Media[];
 }

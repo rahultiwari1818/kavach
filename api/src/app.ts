@@ -8,6 +8,7 @@ import { Request,Response } from "express";
 import cookieParser from "cookie-parser";
 import usersRoutes from "./routes/users.routes.js";
 import crimeRoutes from "./routes/crimeReport.routes.js";
+import auditRoutes from "./routes/auditLog.routes.js";
 
 const app = express();
 
@@ -54,6 +55,11 @@ app.use("/api/v1/users",usersRoutes);
 
 // crime route middleware
 app.use("/api/v1/crime",crimeRoutes);
+
+// auditlog route middleware
+app.use("/api/v1/audit-logs",auditRoutes);
+
+
 
 
 

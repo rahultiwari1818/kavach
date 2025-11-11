@@ -1,7 +1,5 @@
 "use client";
 import { useEffect } from "react";
-import { useMap } from "react-leaflet";
-import L from "leaflet";
 import "leaflet.heat";
 
 interface HeatmapLayerProps {
@@ -9,23 +7,27 @@ interface HeatmapLayerProps {
 }
 
 export default function HeatmapLayer({ points }: HeatmapLayerProps) {
-  const map = useMap();
+  // const map = useMap();
 
-  useEffect(() => {
-    if (!points || points.length === 0) return;
+  // useEffect(() => {
+  //   if (!points || points.length === 0) return;
 
-    const heatLayer = (L as any).heatLayer(points, {
-      radius: 25,
-      blur: 20,
-      maxZoom: 17,
-      minOpacity: 1,
-    //   gradient: { 0.4: "orange", 0.6: "red", 1.0: "darkred" },
-    }).addTo(map);
+  //   const heatLayer = (L as any).heatLayer(points, {
+  //     radius: 25,
+  //     blur: 20,
+  //     maxZoom: 17,
+  //     minOpacity: 1,
+  //   //   gradient: { 0.4: "orange", 0.6: "red", 1.0: "darkred" },
+  //   }).addTo(map);
 
-    return () => {
-      map.removeLayer(heatLayer);
-    };
-  }, [points, map]);
+  //   return () => {
+  //     map.removeLayer(heatLayer);
+  //   };
+  // }, [points, map]);
+
+  useEffect(()=>{
+    console.log(points);
+  },[])
 
   return null;
 }

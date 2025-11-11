@@ -16,7 +16,7 @@ export const verifySuperAdmin =  (
       return;
     }
     const user = verifyToken(authToken);
-
+    // console.log(user)
     if (user.role !== "super-admin") {
       res
         .status(ResponseCode.UNAUTHORIZED)

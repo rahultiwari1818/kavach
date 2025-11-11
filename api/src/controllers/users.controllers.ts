@@ -12,6 +12,8 @@ import oauth2Client from "../config/googleAuth.config.js";
 import axios from "axios";
 import userToken from "../interfaces/userToken.interface.js";
 import { sendMail } from "../config/mail.config.js";
+import { UserFactoryProvider } from "../patterns/factories/userFacatories.js";
+import { appEventEmitter } from "../patterns/observers/eventEmitter.js";
 
 export const loginController = async (
   req: Request,
@@ -19,12 +21,12 @@ export const loginController = async (
 ): Promise<void> => {
   try {
     const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
-    const user = await User.findOne({ email: email });
     if (!user) {
-      res.status(ResponseCode.BAD_REQUEST).json({
-        message: "Email is not Registered!.",
-      });
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Email not registered." });
       return;
     }
 
@@ -32,45 +34,27 @@ export const loginController = async (
       password,
       String(user.password)
     );
-
-    const isActive = user.isActive;
-
-    if (isValidPassword && isActive) {
-      const payload: userToken = {
-        _id: String(user._id),
-        email: user.email,
-        role: user.role,
-      };
-
-      const token = generateToken(payload);
-
-      res.cookie("authToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "lax",
-      });
-
-      res.cookie("role", user.role, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "lax",
-      });
-
-      res.status(ResponseCode.SUCCESS).json({
-        message: "Loggedin Successfully.!",
-      });
-    } else {
-      if (!isValidPassword)
-        res.status(ResponseCode.BAD_REQUEST).json({
-          message: "Incorrect Password.!",
-        });
-      else
-        res.status(ResponseCode.BAD_REQUEST).json({
-          message: "Login Disabled .!",
-        });
+    if (!isValidPassword) {
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Incorrect Password." });
+      return;
     }
+
+    if (!user.isActive) {
+      res
+        .status(ResponseCode.BAD_REQUEST)
+        .json({ message: "Account is inactive." });
+      return;
+    }
+
+    // Factory Pattern
+    const userFactory = UserFactoryProvider.getFactory(user.role);
+    userFactory.generateAuthCookies(user, res);
+
+    res.status(ResponseCode.SUCCESS).json({
+      message: `${user.role} logged in successfully.`,
+    });
   } catch (error) {
     console.error("Login Error:", error);
     res
@@ -126,42 +110,15 @@ export const registerController = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { email, name, password } = req.body;
-    const hashedPassword = await hashPassword(password);
+    const { email, name, password, role = "public" } = req.body;
 
-    const newUser = new User({
-      name,
-      email,
-      role: "public",
-      password: hashedPassword,
-    });
+    const userFactory = UserFactoryProvider.getFactory(role);
+    const newUser = await userFactory.createUser(name, email, password);
 
-    await newUser.save();
-
-    const payload: userToken = {
-      _id: String(newUser._id),
-      email: newUser.email,
-      role: newUser.role,
-    };
-
-    const token = generateToken(payload);
-
-    res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    });
-
-    res.cookie("role", newUser.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    });
+    userFactory.generateAuthCookies(newUser, res);
 
     res.status(ResponseCode.CREATED).json({
-      message: "User registered successfully.",
+      message: `${role} registered successfully.`,
     });
   } catch (error) {
     console.error("Register Error:", error);
@@ -219,13 +176,12 @@ export const googleAuth = async (
         email,
         role: "public",
       });
-    }
-    else{
-      if(!user.isActive){
+    } else {
+      if (!user.isActive) {
         res.status(ResponseCode.FORBIDDEN).json({
-          message:"Login Disabled",
-          result:false
-        })
+          message: "Login Disabled",
+          result: false,
+        });
         return;
       }
     }
@@ -384,17 +340,20 @@ export const addAdminController = async (
         .json({ error: "Access denied. Only super admins can add admins." });
       return;
     }
+    const userFactory = UserFactoryProvider.getFactory("admin");
 
-    const hashedPassword = await hashPassword(password);
+    const newUser = await userFactory.createUser(name, email, password);
 
-    const newAdmin = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role: "admin",
+    appEventEmitter.emit("admin_added", {
+      performedBy: req.user?._id,
+      adminId: newUser._id,
+      userRole: req.user?.role,
+      ipAddress: req.ip,
+      details: `Admin account created for ${newUser.email}`,
     });
 
-    await newAdmin.save();
+    // userFactory.generateAuthCookies(newUser, res);
+
     const body = `
   <p>Hello,</p>
   <p>You have been added as a new <strong>Admin</strong> on <b>Kavach App</b>.</p>
@@ -412,10 +371,10 @@ export const addAdminController = async (
     res.status(ResponseCode.CREATED).json({
       message: "Admin added successfully.",
       admin: {
-        id: newAdmin._id,
-        name: newAdmin.name,
-        email: newAdmin.email,
-        role: newAdmin.role,
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
       },
     });
   } catch (error) {
@@ -435,7 +394,9 @@ export const getAdminsController = async (
       "_id name email isActive"
     );
     if (!admins || admins.length === 0) {
-      res.status(ResponseCode.SUCCESS).json({data:[], message: "No admins found." });
+      res
+        .status(ResponseCode.SUCCESS)
+        .json({ data: [], message: "No admins found." });
       return;
     }
 
@@ -476,6 +437,18 @@ export const updateActiveStatusController = async (
       return;
     }
 
+    
+
+    appEventEmitter.emit("admin_status_updated", {
+      performedBy: req.user?._id,
+      adminId: updatedUser._id,
+      userRole: req.user?.role,
+      ipAddress: req.ip,
+      details: `Admin ${updatedUser.email} status changed to ${
+        updatedUser.isActive ? "Active" : "Inactive"
+      }`,
+    });
+
     res.status(ResponseCode.SUCCESS).json({
       message: "User active status updated successfully.",
       user: updatedUser,
@@ -488,7 +461,6 @@ export const updateActiveStatusController = async (
   }
 };
 
-
 export const getAllUsersController = async (req: Request, res: Response) => {
   try {
     const usersWithCrimeCount = await User.aggregate([
@@ -496,11 +468,11 @@ export const getAllUsersController = async (req: Request, res: Response) => {
 
       {
         $lookup: {
-          from: "crimereports",      // collection name of crime reports
+          from: "crimereports", // collection name of crime reports
           localField: "_id",
           foreignField: "reportedBy",
-          as: "crimeReports"
-        }
+          as: "crimeReports",
+        },
       },
 
       {
@@ -521,12 +493,12 @@ export const getAllUsersController = async (req: Request, res: Response) => {
                 description: "$$crime.description",
                 datetime: "$$crime.datetime",
                 isVerified: "$$crime.isVerified",
-                location: "$$crime.location"
-              }
-            }
-          }
-        }
-      }
+                location: "$$crime.location",
+              },
+            },
+          },
+        },
+      },
     ]);
 
     if (!usersWithCrimeCount || usersWithCrimeCount.length === 0) {
@@ -536,10 +508,10 @@ export const getAllUsersController = async (req: Request, res: Response) => {
       return;
     }
 
-    res
-      .status(ResponseCode.SUCCESS)
-      .json({ data: usersWithCrimeCount, message: "Users Fetched Successfully!" });
-
+    res.status(ResponseCode.SUCCESS).json({
+      data: usersWithCrimeCount,
+      message: "Users Fetched Successfully!",
+    });
   } catch (error) {
     console.error("Error Fetching All Users:", error);
     res
@@ -547,7 +519,6 @@ export const getAllUsersController = async (req: Request, res: Response) => {
       .json({ error: "Internal Server Error" });
   }
 };
-
 
 // ----------------------------------------------------------------------- Util Funcations for Controllers ----------------------------------------------------------------------------------
 

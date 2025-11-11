@@ -8,8 +8,9 @@ import { CustomMapProps } from "./types";
 import MapMarkerLayer from "./MapMarkerLayer";
 import MapClickHandler from "./MapClickHandler";
 import { Icon } from "leaflet";
-import HeatmapLayer from "./HeatMapLayer";
+// import HeatmapLayer from "./HeatMapLayer";
 import RiskZoneLayer from "./RiskZoneLayer";
+import HeatmapLayer from "./HeatMapLayer";
 
 const defaultUserIcon = new Icon({
   iconUrl: "/user-location.png",
@@ -42,9 +43,9 @@ function MapComponent({
   showUserLocation = false,
   userIcon = defaultUserIcon,
   onMapClick,
-  heatPoints,
-  crimeCount,
-  radius
+  heatPoints=[[0,0,0]],
+  crimeCount=0,
+  radius=1000
 }: CustomMapProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null

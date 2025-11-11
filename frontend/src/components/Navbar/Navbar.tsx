@@ -7,13 +7,17 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 import { useState } from "react";
+import Overlay from "../Overlay/Overlay";
 
 export default function Navbar() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoading,setIsLoading] = useState(false);
 
   const logoutHandler = async () => {
     try {
+      setIsLoading(true);
+      
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/logout`,
         {},
@@ -24,11 +28,16 @@ export default function Navbar() {
       const error = err as AxiosError<{ message: string }>;
       if (error.response) toast.error(error.response.data.message);
     }
+    finally{
+      setIsLoading(false);
+    }
   };
 
   const role = Cookies.get("role");
 
   return (
+    <>
+    <Overlay open={isLoading}/>
     <nav className="bg-white shadow-md sticky top-0 z-50 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
@@ -55,6 +64,9 @@ export default function Navbar() {
               </Link>
               <Link href="/super-admin/manage-users" className="nav-link">
                 Manage Users
+              </Link>
+              <Link href="/super-admin/audit-log" className="nav-link">
+                View Logs
               </Link>
               
               <Link href="/super-admin/verified-crime" className="nav-link">
@@ -108,17 +120,20 @@ export default function Navbar() {
         <div className="md:hidden mt-4 space-y-3 px-4">
           {role === "super-admin" ? (
             <>
-              <Link href="/super-admin/home" className="block nav-link">
+              <Link href="/super-admin/home" className="nav-link">
                 Home
               </Link>
-              <Link href="/super-admin/manage-admins" className="block nav-link">
+              <Link href="/super-admin/manage-admins" className="nav-link">
                 Manage Admins
               </Link>
-              <Link href="/super-admin/manage-users" className="block nav-link">
+              <Link href="/super-admin/manage-users" className="nav-link">
                 Manage Users
               </Link>
+              <Link href="/super-admin/audit-log" className="nav-link">
+                View Logs
+              </Link>
               
-              <Link href="/super-admin/verified-crime" className="block nav-link">
+              <Link href="/super-admin/verified-crime" className="nav-link">
                 Verified Crimes
               </Link>
             </>
@@ -154,5 +169,6 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+    </>
   );
 }

@@ -1,9 +1,10 @@
 import { LatLngExpression, Icon } from "leaflet";
+import { JSX } from "react";
 
 export interface MapMarker {
   id: string;
   position: LatLngExpression;
-  popupContent?: string | JSX.Element;
+  popupContent?: JSX.Element;
   icon?: Icon;
 }
 
