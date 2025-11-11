@@ -4,25 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Dialog from "../Dialog/Dialog";
 import axios from "axios";
 import Switch from "@mui/material/Switch";
-
-interface Crime {
-  _id: string;
-  title: string;
-  type: string;
-  description: string;
-  datetime: string;
-  isVerified: boolean;
-  verifiedBy: unknown;
-}
-
-interface UserData {
-  _id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-  totalCrimesReported: number;
-  crimes: Crime[];
-}
+import { UserData } from "@/Types/user";
 
 export default function UserDetailsDialog({
   isOpen,
@@ -46,14 +28,14 @@ export default function UserDetailsDialog({
 
   const crimeTypes = useMemo(() => {
     if (!localUser) return ["all"];
-    const types = Array.from(new Set(localUser.crimes.map((c) => c.type)));
+    const types = Array.from(new Set(localUser.crimes?.map((c) => c.type)));
     return ["all", ...types];
   }, [localUser]);
 
   const filteredCrimes = useMemo(() => {
     if (!localUser) return [];
     if (filterType === "all") return localUser.crimes;
-    return localUser.crimes.filter((crime) => crime.type === filterType);
+    return localUser.crimes?.filter((crime) => crime.type === filterType);
   }, [filterType, localUser]);
 
   const handleStatusToggle = async () => {
@@ -141,13 +123,13 @@ export default function UserDetailsDialog({
         <div>
           <h3 className="text-md font-semibold mb-2">Reported Crimes</h3>
 
-          {filteredCrimes.length === 0 ? (
+          {filteredCrimes?.length === 0 ? (
             <p className="text-gray-500 text-sm">
               No crimes found for this filter.
             </p>
           ) : (
             <ul className="space-y-3 max-h-64 overflow-y-auto pr-2">
-              {filteredCrimes.map((crime) => (
+              {filteredCrimes?.map((crime) => (
                 <li
                   key={crime._id}
                   className="border rounded-lg p-3 shadow-sm bg-white"
@@ -164,10 +146,10 @@ export default function UserDetailsDialog({
                     Status:{" "}
                     <span
                       className={
-                        crime.isVerified ? "text-green-600" : "text-yellow-600"
+                        crime.verificationStatus === "verified" ? "text-green-600" : "text-yellow-600"
                       }
                     >
-                      {crime.isVerified ? "Verified" : "Pending"}
+                      {crime.verificationStatus}
                     </span>
                   </p>
                 </li>

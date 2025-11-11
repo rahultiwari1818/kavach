@@ -3,24 +3,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import UserDetailsDialog from "@/components/UserDetailsDialog/UserDetailsDialog";
+import { UserData } from "@/Types/user";
 
-interface Crime {
-  _id: string;
-  isVerified: boolean;
-  title?: string;
-  type?: string;
-  description?: string;
-  datetime?: string;
-}
-
-interface UserData {
-  _id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-  totalCrimesReported: number;
-  crimes: Crime[];
-}
 
 export default function Page() {
   const [users, setUsers] = useState<UserData[]>([]);
@@ -92,12 +76,12 @@ export default function Page() {
 
             <tbody>
               {users.map((user) => {
-                const verifiedCount = user.crimes.filter(
-                  (c) => c.isVerified
-                ).length;
+                const verifiedCount = user.crimes?.filter(
+                  (c) => c.verificationStatus === "verified"
+                ).length ?? 0;
 
                 const unverifiedCount =
-                  user.totalCrimesReported - verifiedCount;
+                  user.totalCrimesReported - verifiedCount ;
 
                 return (
                   <tr
