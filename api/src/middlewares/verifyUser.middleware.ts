@@ -24,7 +24,7 @@ export function verifyUser(
       return;
     }
 
-    req.user = user; // Assuming you've extended `Request` with `user`
+    req.user = user;
     next();
   } catch (error) {
     console.error('Error Occurred While Verifying User:', error);

@@ -10,7 +10,7 @@ export const loginValidations = (
     const { email, password } = req.body;
 
     if (!email) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Email is required" });
+      res.status(ResponseCode.SUCCESS).json({ message: "Email is required" });
       return;
     }
     
@@ -55,7 +55,7 @@ export const registerValidations = (
 
     
     if (!otp) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "fdasdfkmsdl is required" });
       return;
     }
 
@@ -63,7 +63,7 @@ export const registerValidations = (
     next();
   } catch (error) {
     console.log("Error Occured In Register Validations : ", error);
-    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+    res.status(ResponseCode.CONFLICT).json({
       message:"Internal Server Error.!"
     })
   }
