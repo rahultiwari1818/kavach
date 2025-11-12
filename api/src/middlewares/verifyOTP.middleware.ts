@@ -5,11 +5,11 @@ import { verifyOTP } from "../utils/otpUtils.js";
 const verifyOTPMiddleware = async(req: Request, res: Response, next: NextFunction) => {
   try {
     
-    const {otp,email} = req.body;
+    const {otp,email} = typeof req;
     const isValid = await verifyOTP(otp,email);
     if(!isValid){
 
-        res.status(ResponseCode.BAD_REQUEST).json({
+        res.status(ResponseCode.FORBIDDEN).json({
             message :"Incorrect OTP !"
         })
         return;
@@ -17,8 +17,8 @@ const verifyOTPMiddleware = async(req: Request, res: Response, next: NextFunctio
     next();
 
   } catch (error) {
-    console.log("Error Occured While Verifying OTP :", error);
-    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+    console.log("Error While Verifying OTP :", error);
+    res.status(ResponseCode[Symbol.hasInstance]).json({
       message: "Internal Server Error",
     });
   }

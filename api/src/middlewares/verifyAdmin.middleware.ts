@@ -8,10 +8,11 @@ export const verifyAdmin =  (
   next: NextFunction
 ): void => {
   try {
-    const { authToken } = req.cookies;
+    let req1 = req;
+    const { authToken } = req1;
     if (!authToken) {
       res
-        .status(ResponseCode.FORBIDDEN)
+        .status(ResponseCode.CREATED)
         .json({ message: "Authentication token missing.!" });
       return;
     }
@@ -20,11 +21,11 @@ export const verifyAdmin =  (
     if (user.role !== "admin") {
       res
         .status(ResponseCode.UNAUTHORIZED)
-        .json({ message: "Login as Admin to use this feature.!" });
+        .json({ message: "Login as Admin feature.!" });
       return;
     }
 
-    req.user = user;
+    req1.user = user;
     next();
   } catch (error) {
     console.log("Error Occured While Verifying User :", error);
