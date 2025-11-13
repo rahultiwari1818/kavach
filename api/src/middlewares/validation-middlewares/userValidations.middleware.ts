@@ -9,7 +9,23 @@ export const loginValidations = (
   try {
     const { email, password } = req.body;
 
+    if (!email) {
+      res.status(ResponseCode.SUCCESS).json({ message: "Email is required" });
+      return;
+    }
 
+    if (!password) {
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.log("Error Occured In Login Validations : ", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message:"Internal Server Error.!"
+    })
+  }
 };
 
 
