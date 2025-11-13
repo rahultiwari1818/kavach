@@ -32,7 +32,7 @@ router.post("/add-admin",verifySuperAdmin,addAdminValidations,addAdminController
 
 router.get("/admins",verifySuperAdmin,getAdminsController);
 
-router.patch("/updateActiveStatus/:userId",verifySuperAdmin,updateActiveStatusController);
+router.patch("/updateActiveStatus/:userId",verifyAdmin,updateActiveStatusController);
 
 router.get("/get-all-users",verifyAdmin,getAllUsersController);
 

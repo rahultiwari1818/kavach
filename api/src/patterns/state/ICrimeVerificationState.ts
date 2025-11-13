@@ -1,5 +1,5 @@
 export interface ICrimeVerificationState {
-  verify(): Promise<void>;
-  reject(): Promise<void>;
+  verify(remark:string): Promise<void>;
+  reject(remark:string): Promise<void>;
   getStatus(): string;
 }

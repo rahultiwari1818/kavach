@@ -1,5 +1,5 @@
 import { Router } from "express"; 
-import { changeVerificationStatus, crimeReportController, getAllUnverifiedCrimes, getAllverifiedCrimes, getCrimeClusters, getMyCrimeReports, getNearbyCrimes } from "../controllers/crimeReport.controllers.js";
+import { changeVerificationStatus, crimeReportController, getAllUnverifiedCrimes, getAllverifiedCrimes, getCrimeClusters, getCrimesController, getMyCrimeReports, getNearbyCrimes } from "../controllers/crimeReport.controllers.js";
 import { verifyUser } from "../middlewares/verifyUser.middleware.js";
 import { crimeReportValidation } from "../middlewares/validation-middlewares/crimeReportValidations.middleware.js";
 import upload from "../middlewares/multer-file-upload/file_upload.middleware.js";
@@ -27,6 +27,7 @@ router.get("/getAllverifiedCrimes",verifyAdmin,getAllverifiedCrimes);
 
 router.patch("/:id/verify",verifyAdmin,changeVerificationStatus);
 
+router.get("/getCrimes",verifyAdmin,getCrimesController);
 
 
 

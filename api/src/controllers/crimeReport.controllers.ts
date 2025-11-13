@@ -295,10 +295,10 @@ export const changeVerificationStatus = async (req: Request, res: Response) => {
       return;
     }
 
-    const context = new CrimeVerificationContext(id, crime.verificationStatus);
+    const context = new CrimeVerificationContext(id, crime.verificationStatus,remarks);
 
-    if (status === "verify") await context.getState().verify();
-    else if (status === "reject") await context.getState().reject();
+    if (status === "verify") await context.getState().verify(remarks);
+    else if (status === "reject") await context.getState().reject(remarks);
 
     // Emit Audit Event
     appEventEmitter.emit("crime_verification_updated", {
@@ -378,5 +378,102 @@ export const getCrimeClusters = async (req: Request, res: Response) => {
     res
       .status(ResponseCode.INTERNAL_SERVER_ERROR)
       .json({ error: "Internal Server Error" });
+  }
+};
+
+export const getCrimesController = async (req: Request, res: Response) => {
+  try {
+    const { status = "pending", type, fromDate, lat, lng, radius } = req.query;
+
+    const hasGeoFilter = lat && lng && radius;
+    const latitude = parseFloat(lat as string);
+    const longitude = parseFloat(lng as string);
+    const distance = parseFloat(radius as string);
+
+    const matchStage: Record<string, any> = {};
+
+    if (status && ["verified", "pending", "rejected"].includes(String(status))) {
+      matchStage.verificationStatus = status;
+    }
+
+    if (type && type !== "All") matchStage.type = type;
+
+    if (fromDate && fromDate !== "All") {
+      matchStage.datetime = { $gte: new Date(fromDate as string) };
+    }
+
+    // === Base Pipeline ===
+    const pipeline: any[] = [];
+
+    // Add geo stage first if geo filters exist
+    if (hasGeoFilter && !isNaN(latitude) && !isNaN(longitude) && !isNaN(distance)) {
+      pipeline.push({
+        $geoNear: {
+          near: { type: "Point", coordinates: [longitude, latitude] },
+          distanceField: "distance",
+          spherical: true,
+          maxDistance: distance,
+        },
+      });
+    }
+
+    // Apply filters
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    // Populate reportedBy and verifiedBy
+    pipeline.push(
+      {
+        $lookup: {
+          from: "users",
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "verifiedBy",
+          foreignField: "_id",
+          as: "verifiedBy",
+        },
+      },
+      { $unwind: { path: "$verifiedBy", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          title: 1,
+          type: 1,
+          description: 1,
+          datetime: 1,
+          location: 1,
+          mediaUrl: 1,
+          anonymous: 1,
+          verificationStatus: 1,
+          verificationRemarks: 1,
+          distance: 1,
+          "reportedBy._id": 1,
+          "reportedBy.name": 1,
+          "reportedBy.email": 1,
+          "verifiedBy._id": 1,
+          "verifiedBy.name": 1,
+          "verifiedBy.email": 1,
+        },
+      }
+    );
+
+    const crimes = await CrimeReportModel.aggregate(pipeline);
+
+    res.status(ResponseCode.SUCCESS).json({
+      message: "Crimes fetched successfully.",
+      data: crimes,
+    });
+  } catch (error) {
+    console.error("Error fetching crimes:", error);
+    res
+      .status(ResponseCode.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal Server Error while fetching crimes." });
   }
 };

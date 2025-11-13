@@ -8,12 +8,12 @@ export class CrimeVerificationContext {
   private state: ICrimeVerificationState;
   private crimeId: string;
 
-  constructor(crimeId: string, currentStatus: string) {
+  constructor(crimeId: string, currentStatus: string,remarks:string) {
     this.crimeId = crimeId;
-    this.state = this.getStateInstance(currentStatus);
+    this.state = this.getStateInstance(currentStatus,remarks);
   }
 
-  private getStateInstance(status: string): ICrimeVerificationState {
+  private getStateInstance(status: string,remarks:string): ICrimeVerificationState {
     switch (status) {
       case "verified":
         return new VerifiedState(this);
