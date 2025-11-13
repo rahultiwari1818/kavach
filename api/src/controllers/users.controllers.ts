@@ -1,344 +1,289 @@
 import { Request, Response } from "express";
-import User from "../models/users.model.js";
+import CrimeReportModel from "../models/crimeReport.model.js";
 import { ResponseCode } from "../utils/responseCode.enum.js";
-import { comparePassword, hashPassword } from "../utils/utils.js";
-import { generateToken } from "../utils/webTokenUtils.js";
-import { sendOTP, verifyOTP } from "../utils/otpUtils.js";
-import oauth2Client from "../config/googleAuth.config.js";
-import axios from "axios";
-import userToken from "../interfaces/userToken.interface.js";
+import { uploadToCloudinary } from "../config/cloudinary.config.js";
+import CrimeReport from "../interfaces/crimeReport.interface.js";
 
-export const loginController = async (
-  req: Request,
-  res: Response
+export const crimeReportController = async (
+    req: Request,
+    res: Response
 ): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const {
+      title,
+      type,
+      description,
+      latitude,
+      longitude,
+      datetime,
+      anonymous,
+    } = req.body;
 
-    const user = await User.findOne({ email: email });
-    if (!user) {
-      res.status(ResponseCode.BAD_REQUEST).json({
-        message: "Email is not Registered!.",
-      });
-      return;
+    const reportedBy = req.user?._id;
+
+    const mediaFiles = req.files as Express.Multer.File[];
+    const mediaUrl: { url: string; type: string }[] = [];
+
+    if (mediaFiles?.length > 0) {
+      for (const file of mediaFiles) {
+        const resourceType = file.mimetype.startsWith("video")
+            ? "video"
+            : "image";
+        const uploadResult = await uploadToCloudinary(file.path, resourceType);
+        if (uploadResult.message === "Success") {
+          mediaUrl.push({ url: uploadResult.url, type: resourceType });
+        }
+      }
     }
 
-    const isValid = await comparePassword(password, String(user.password));
-
-    if (isValid) {
-      const payload: userToken = {
-        _id: String(user._id),
-        email: user.email,
-        role: user.role,
-      };
-
-      const token = generateToken(payload);
-
-      res.cookie("authToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "lax",
-      });
-
-      res.cookie("role", user.role, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "lax",
-      });
-
-      res.status(ResponseCode.SUCCESS).json({
-        message: "Loggedin Successfully.!",
-      });
-    } else {
-      res.status(ResponseCode.BAD_REQUEST).json({
-        message: "Incorrect Password.!",
-      });
-    }
-  } catch (error) {
-    console.error("Login Error:", error);
-    res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal Server Error" });
-  }
-};
-
-export const verifyEmail = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      res
-        .status(ResponseCode.BAD_REQUEST)
-        .json({ message: "Email is required" });
-      return;
-    }
-
-    const userExist = await doesUserAlreadyExist(email);
-    if (userExist) {
-      res.status(ResponseCode.CONFLICT).json({
-        message: "User with this email already exists",
-      });
-      return;
-    }
-
-    const isOtpSent = await sendOTP(email);
-
-    if (isOtpSent) {
-      res.status(ResponseCode.SUCCESS).json({
-        message: "OTP sent successfully",
-      });
-      return;
-    } else {
-      res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
-        message: "Error Occured While sending OTP!",
-      });
-      return;
-    }
-  } catch (error) {
-    console.error("Email Verification Error:", error);
-    res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal Server Error" });
-  }
-};
-
-export const registerController = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email, name, password } = req.body;
-    const hashedPassword = await hashPassword(password);
-
-    const newUser = new User({
-      name,
-      email,
-      role: "public",
-      password: hashedPassword,
+    const report = new CrimeReportModel({
+      title,
+      type,
+      description,
+      location: {
+        type: "Point",
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      },
+      datetime: new Date(datetime),
+      mediaUrl,
+      anonymous: anonymous === "true", // ensure boolean
+      reportedBy,
     });
 
-    await newUser.save();
-
-    const payload: userToken = {
-      _id: String(newUser._id),
-      email: newUser.email,
-      role: newUser.role,
-    };
-
-    const token = generateToken(payload);
-
-    res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    });
-
-    res.cookie("role", newUser.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    });
+    await report.save();
 
     res.status(ResponseCode.CREATED).json({
-      message: "User registered successfully.",
+      message: "Crime report submitted successfully.",
+      report,
     });
   } catch (error) {
-    console.error("Register Error:", error);
-    res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal Server Error" });
+    console.error("Crime Reporting Error:", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
   }
 };
 
-export const logoutController = async (
-  req: Request,
-  res: Response
+export const getNearbyCrimes = async (
+    req: Request,
+    res: Response
 ): Promise<void> => {
   try {
-    res.clearCookie("authToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    res.clearCookie("role", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    res.status(ResponseCode.SUCCESS).json({
-      message: "Logout Successfully.!",
-    });
-  } catch (error) {
-    console.error("Logout Error:", error);
-    res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal Server Error" });
-  }
-};
+    const lat = parseFloat(req.query.lat as string);
+    const lng = parseFloat(req.query.lng as string);
 
-export const googleAuth = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const code = req.body.code;
-    const googleRes = await oauth2Client.getToken(String(code || ""));
-    oauth2Client.setCredentials(googleRes.tokens);
-
-    const userRes = await axios.get(
-      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
-    );
-    const { email, name } = userRes.data;
-    // console.log(userRes);
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      user = await User.create({
-        name,
-        email,
-        role: "public",
-      });
-    }
-    const payload: userToken = {
-      _id: String(user._id),
-      email: user.email,
-      role: user.role,
-    };
-
-    const token = generateToken(payload);
-
-    res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    });
-
-    res.cookie("role", user.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-    });
-
-    res.status(ResponseCode.SUCCESS).json({
-      message: "User Loggedin Successfully.!",
-      result: true,
-    });
-  } catch (err) {
-    console.error("Google Auth Error:", err);
-    res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal Server Error" });
-  }
-};
-
-
-
-
-export const forgotPasswordSendOTP = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email } = req.body;
-    if (!email) {
+    if (isNaN(lat) || isNaN(lng)) {
       res
-        .status(ResponseCode.BAD_REQUEST)
-        .json({ message: "Email is required" });
-      return;
+          .status(ResponseCode.BAD_REQUEST)
+          .json({ message: "Invalid or missing latitude/longitude" });
     }
 
-    const userExist = await doesUserAlreadyExist(email);
-    if (!userExist) {
-      res.status(ResponseCode.CONFLICT).json({
-        message: "Email is not registered.!",
-      });
-      return;
-    }
+    const crimes = await CrimeReportModel.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [lng, lat] },
+          distanceField: "distance",
+          maxDistance: 3000, // in meters
+          spherical: true,
+          query: { isVerified: true },
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // name of your user collection (usually lowercase plural of model)
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      {
+        $unwind: "$reportedBy",
+      },
+      {
+        $unset: "reportedBy.password", // ✅ removes password from populated user
+      },
+    ]);
 
-    const isOtpSent = await sendOTP(email);
-
-    if (isOtpSent) {
-      res.status(ResponseCode.SUCCESS).json({
-        message: "OTP sent successfully",
-      });
-      return;
-    } else {
-      res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
-        message: "Error Occured While sending OTP!",
-      });
-      return;
-    }
-  } catch (error) {
-    console.error("Email Sending for Forgot password Error:", error);
     res
-      .status(ResponseCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal Server Error" });
+        .status(ResponseCode.INTERNAL_SERVER_ERROR)
+        .json({ data: crimes, message: "Crimes Data Successfully Fetched" });
+  } catch (err) {
+    console.error("Error fetching nearby crimes:", err);
+    res
+        .status(ResponseCode.INTERNAL_SERVER_ERROR)
+        .json({ error: "Internal Server Error.!" });
+  }
+};
+
+export const getMyCrimeReports = async (req: Request, res: Response) => {
+  try {
+    const userId = req?.user?._id;
+
+    const myReports = await CrimeReportModel.find({ reportedBy: userId }).sort({
+      createdAt: -1,
+    });
+    res.status(ResponseCode.SUCCESS).json({ data: myReports });
+  } catch (err) {
+    console.error("Error fetching user's crime reports:", err);
+    res
+        .status(ResponseCode.INTERNAL_SERVER_ERROR)
+        .json({ message: "Failed to fetch your crime reports." });
+  }
+};
+
+export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
+  try {
+    const crimes = await CrimeReportModel.aggregate([
+      {
+        $match: { isVerified: false }, // 🔍 only unverified crimes
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      {
+        $unwind: "$reportedBy",
+      },
+      {
+        $unset: "reportedBy.password", // 🛡️ remove password field
+      },
+    ]);
+
+    res.status(ResponseCode.SUCCESS).json({ data: crimes });
+  } catch (error) {
+    console.error("Getting Unverified Crime Error:", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
   }
 };
 
 
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const getAllverifiedCrimes = async (req: Request, res: Response) => {
   try {
-    const { otp, password, email } = req.body;
+    const crimes = await CrimeReportModel.aggregate([
+      {
+        $match: { isVerified: true }, // 🔍 only unverified crimes
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "reportedBy",
+          foreignField: "_id",
+          as: "reportedBy",
+        },
+      },
+      {
+        $unwind: "$reportedBy",
+      },
+      {
+        $unset: "reportedBy.password", // 🛡️ remove password field
+      },
+    ]);
 
-    if (!otp) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "OTP is required" });
-      return;
-    }
-    if (!password) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
-      return;
-    }
-    if (!email) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Email is required" });
-      return;
-    }
-
-    // Verify OTP
-    const isOTPValid = await verifyOTP(otp, email);
-    if (!isOTPValid) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Incorrect OTP" });
-      return;
-    }
-
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      res.status(ResponseCode.NOT_FOUND).json({ message: "User not found" });
-      return;
-    }
-
-    // Hash new password
-    const hashedPassword = await hashPassword(password);
-
-    // Update password
-    user.password = hashedPassword;
-    await user.save();
-
-    res.status(ResponseCode.SUCCESS).json({ message: "Password reset successfully" });
+    res.status(ResponseCode.SUCCESS).json({ data: crimes });
   } catch (error) {
-    console.error("Forgot password Error:", error);
-    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({ message: "Internal Server Error" });
+    console.error("Getting Unverified Crime Error:", error);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
   }
 };
 
-
-// ----------------------------------------------------------------------- Util Funcations for Controllers ----------------------------------------------------------------------------------
-
-export const doesUserAlreadyExist = async (email: string): Promise<Boolean> => {
+export const changeVerificationStatus = async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ email: email });
-    return user == null ? false : true;
-  } catch (error) {
-    console.error(" Error while checking doesUserAlreadyExist:", error);
-    return true;
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id || typeof status !== "boolean") {
+      res.status(ResponseCode.BAD_REQUEST).json({
+        message: "Crime ID and status (boolean) are required",
+      });
+      return;
+    }
+
+    const crime = await CrimeReportModel.findByIdAndUpdate(
+        id,
+        { isVerified: status },
+        { new: true }
+    );
+
+    if (!crime) {
+      res.status(ResponseCode.NOT_FOUND).json({
+        message: "Crime report not found",
+      });
+      return;
+    }
+
+    res.status(ResponseCode.SUCCESS).json({
+      message: `Crime report has been ${
+          status ? "verified" : "unverified"
+      } successfully`,
+      crime,
+    });
+  } catch (error: any) {
+    console.error("Changing Verification Status Error:", error.message);
+    res.status(ResponseCode.INTERNAL_SERVER_ERROR).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const getCrimeClusters = async (req: Request, res: Response) => {
+  try {
+    const radiusInMeters = 1000;
+    const minClusterSize = 10;
+
+    const allCrimes : CrimeReport[] = await CrimeReportModel.find({}, { location: 1 });
+
+    const visited = new Set();
+    const clusters: any[] = [];
+
+    for (let i = 0; i < allCrimes.length; i++) {
+      if (visited.has(allCrimes[i]._id.toString())) continue;
+
+      const centerCrime = allCrimes[i];
+      const nearbyCrimes = await CrimeReportModel.find({
+        location: {
+          $nearSphere: {
+            $geometry: centerCrime.location,
+            $maxDistance: radiusInMeters,
+          },
+        },
+      });
+
+      const clusterCrimes = nearbyCrimes.filter(c =>
+          !visited.has(c._id.toString())
+      );
+
+      if (clusterCrimes.length >= minClusterSize) {
+        clusterCrimes.forEach(c => visited.add(c._id.toString()));
+        const avgLat =
+            clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[1], 0) /
+            clusterCrimes.length;
+        const avgLng =
+            clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[0], 0) /
+            clusterCrimes.length;
+
+        clusters.push({
+          center: { lat: avgLat, lng: avgLng },
+          count: clusterCrimes.length,
+          crimes: clusterCrimes.map(c => ({
+            id: c._id,
+            lat: c.location.coordinates[1],
+            lng: c.location.coordinates[0],
+          })),
+        });
+      }
+    }
+
+    res.status(200).json({ clusters });
+  } catch (err) {
+    console.error("Error clustering crimes:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

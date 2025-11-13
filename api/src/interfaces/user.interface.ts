@@ -5,7 +5,7 @@ export interface User extends Document {
   name: string;
   email: string;
   password?: string;
-  role: 'admin' | 'public';
+  role: 'admin' | 'public' | 'private' | 'admin' | 'Super-admin';
   createdAt: Date;
 }
 
