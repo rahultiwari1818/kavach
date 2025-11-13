@@ -36,13 +36,13 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 🚫 Admin trying to access user area — block
+  //  Admin trying to access user area — block
   if (isUserRoute && role === 'admin') {
     return NextResponse.redirect(new URL('/admin/home', request.url));
   }
 
 
-  // 🚫 User trying to access admin area — block
+  //  User trying to access admin area — block
   if (isAdminRoute && role === 'public') {
     return NextResponse.redirect(new URL('/public/home', request.url));
   }
