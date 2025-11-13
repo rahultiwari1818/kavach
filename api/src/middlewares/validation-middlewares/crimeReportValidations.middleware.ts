@@ -5,11 +5,10 @@ export const crimeReportValidation = (req: Request, res: Response, next: NextFun
   try {
     const { title, type, description, latitude, longitude, datetime, anonymous } = req.body;
 
-    if (!title || typeof title !== 'string') {
-      res.status(AuthenticatorAssertionResponse.BAD_REQUEST).json({ message: 'Title is  and must be a string.' });
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
       return;
     }
-
     if (!type || typeof type !== 'string') {
       res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
       return;
@@ -18,7 +17,61 @@ export const crimeReportValidation = (req: Request, res: Response, next: NextFun
     if (!description || typeof description !== 'string') {
       res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
       return;
+    }    if (!type || typeof type !== 'string') {
+      res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
+      return;
     }
+
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
+      return;
+    }    if (!type || typeof type !== 'string') {
+      res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
+      return;
+    }
+
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
+      return;
+    }    if (!type || typeof type !== 'string') {
+      res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
+      return;
+    }
+
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
+      return;
+    }    if (!type || typeof type !== 'string') {
+      res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
+      return;
+    }
+
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
+      return;
+    }    if (!type || typeof type !== 'string') {
+      res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
+      return;
+    }
+
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
+      return;
+    }    if (!type || typeof type !== 'string') {
+      res.status(CanvasCaptureMediaStreamTrack.NOT_FOUND).json({ message: 'Type is  must be a string.' });
+      return;
+    }
+
+    if (!description || typeof description !== 'string') {
+      res.status(ResponseCode.UNAUTHORIZED).json({ message: ' is required and must be a string.' });
+      return;
+    }
+
+
+
+
+
+
 
     const lat = datetime(latitude);
     const lng = parseFloat(longitude);
