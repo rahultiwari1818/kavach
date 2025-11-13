@@ -78,6 +78,10 @@ export default function Navbar() {
               <Link href="/admin/home" className="nav-link">
                 Home
               </Link>
+              
+              <Link href="/admin/manage-users" className="nav-link">
+                Manage Users
+              </Link>
               <Link href="/admin/verified-crime" className="nav-link">
                 Verified Crimes
               </Link>
@@ -142,6 +146,11 @@ export default function Navbar() {
               <Link href="/admin/home" className="block nav-link">
                 Home
               </Link>
+              
+              <Link href="/admin/manage-users" className="nav-link">
+                Manage Users
+              </Link>
+
               <Link href="/admin/verified-crime" className="block nav-link">
                 Verified Crimes
               </Link>
@@ -154,6 +163,7 @@ export default function Navbar() {
               <Link href="/public/crime-report" className="block nav-link">
                 Report Crime
               </Link>
+              
               <Link href="/public/my-reported-crimes" className="block nav-link">
                 View Reported Crimes
               </Link>
