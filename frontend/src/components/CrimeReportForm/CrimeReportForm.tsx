@@ -2,18 +2,10 @@
 
 import { ReactNode, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import dynamic from "next/dynamic";
-
+import CrimeLocationMap from "../CrimeLocationMap/CrimeLocationMap";
 type ChildProps = {
   onSubmit: (data: FormData) => Promise<boolean>;
 };
-
-const CrimeLocationMap = dynamic(
-  () => import("../CrimeLocationMap/CrimeLocationMap"),
-  {
-    ssr: false,
-  }
-);
 
 export default function CrimeReportForm({ onSubmit }: ChildProps): ReactNode {
   const [data, setData] = useState({

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
-import L from "leaflet";
 
 interface RiskZoneLayerProps {
   userLocation: [number, number] | null;
@@ -48,6 +47,9 @@ export default function RiskZoneLayer({
     };
 
     const color = getColorForRisk(crimeCount, radius);
+
+    const L = typeof window !== "undefined" ? require("leaflet") as typeof import("leaflet") : null;
+    if (!L) return;
 
     const circle = L.circle(userLocation, {
       color,

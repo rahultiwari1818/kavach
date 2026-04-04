@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios, { AxiosError } from "axios";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
-import { Icon } from "leaflet";
 import GeneratePopUpContent from "@/components/Map/GeneratePopUpContent";
+import { createLeafletIcon } from "@/components/Map/leafletHelpers";
 import { Crime } from "@/Types/crime";
 
 const MapView = dynamic(() => import("@/components/Map/Map"), { ssr: false });
 
 
 
-const userIcon = new Icon({
+const userIconOptions = {
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  iconSize: [25, 41] as [number, number],
+  iconAnchor: [12, 41] as [number, number],
+};
 
 // 🔹 Enum of crime types
 const CRIME_TYPES = [
@@ -60,6 +60,10 @@ export default function AdminCrimesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>("All");
   const [selectedTime, setSelectedTime] = useState<string>("7d"); // default: past week
+  const userIcon = useMemo(
+    () => createLeafletIcon(userIconOptions),
+    []
+  );
 
   const fetchVerifiedCrimes = async () => {
     try {

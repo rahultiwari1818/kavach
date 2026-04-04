@@ -20,7 +20,7 @@ export const verifySuperAdmin =  (
     if (user.role !== "super-admin") {
       res
         .status(ResponseCode.UNAUTHORIZED)
-        .json({ message: "Login as Admin to use this feature.!" });
+        .json({ message: "Login as Super Admin to use this feature.!" });
       return;
     }
 

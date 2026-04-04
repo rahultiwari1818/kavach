@@ -15,16 +15,28 @@ export default function ForgotPasswordDialog({ isOpen, onClose }: ForgotPassword
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [isResendDisabled, setIsResendDisabled] = useState(false);
+
+  const sendOTP = async () => {
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/sendOTP`,
+        { email },
+        { withCredentials: true }
+      );
+      toast.success("OTP sent to your email.");
+      setIsResendDisabled(true);
+      setTimeout(() => setIsResendDisabled(false), 40000);
+    } catch (err) {
+      const error = err as AxiosError<{ message: string }>;
+      if (error.response) toast.error(error.response.data.message);
+    }
+  };
 
   const handleForgotPassword = async () => {
     try {
       if (step === "email") {
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/sendOTP`,
-          { email },
-          { withCredentials: true }
-        );
-        toast.success("OTP sent to your email.");
+        await sendOTP();
         setStep("otp");
       } else if (step === "otp") {
         await axios.post(
@@ -91,6 +103,18 @@ export default function ForgotPasswordDialog({ isOpen, onClose }: ForgotPassword
             className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
+          <button
+            type="button"
+            onClick={sendOTP}
+            disabled={isResendDisabled}
+            className={`mt-3 w-full py-2 px-4 font-semibold rounded-xl shadow transition ${
+              isResendDisabled
+                ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                : "bg-gray-600 text-white hover:bg-gray-700"
+            }`}
+          >
+            {isResendDisabled ? "Resend OTP (Wait 40s)" : "Resend OTP"}
+          </button>
         </>
       )}
     </Dialog>

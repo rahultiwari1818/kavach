@@ -1,14 +1,21 @@
-import { LatLngExpression, Icon } from "leaflet";
+import type { LatLngExpression } from "leaflet";
 import { JSX } from "react";
 
 export interface MapMarker {
   id: string;
   position: LatLngExpression;
   popupContent?: JSX.Element;
-  icon?: Icon;
+  icon?: any;
 }
 
 
+
+export interface Hotspot {
+  lat: number;
+  lng: number;
+  count: number;
+  color: string;
+}
 
 export interface CustomMapProps {
   center?: LatLngExpression;
@@ -26,4 +33,6 @@ export interface CustomMapProps {
   heatPoints?:Array<[number,number,number]>;
   crimeCount?:number;
   radius?:number;
+  hotspots?: Hotspot[];
+  userIcon?: any;
 }

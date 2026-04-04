@@ -6,7 +6,7 @@ export default function Overlay({ open }: { open: boolean }) {
     <Backdrop
       sx={{
         color: '#ffffff',
-        zIndex: (theme) => theme.zIndex.drawer + 1,
+        zIndex: 1300,
       }}
       open={open}
     >

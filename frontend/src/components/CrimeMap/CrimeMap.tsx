@@ -1,27 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { Icon } from "leaflet";
 import Slider from "@mui/material/Slider";
 import { MapMarker } from "@/components/Map/types";
-import CustomMap from "@/components/Map/Map";
+const CustomMap = dynamic(() => import("@/components/Map/Map"), { ssr: false });
 import GeneratePopUpContent from "../Map/GeneratePopUpContent";
+import { createLeafletIcon } from "@/components/Map/leafletHelpers";
 import { debounce } from "@/utils/generalUtils";
 import { Crime } from "@/Types/crime";
 import Overlay from "../Overlay/Overlay";
 
-const userIcon = new Icon({
+const userIconOptions = {
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  iconSize: [25, 41] as [number, number],
+  iconAnchor: [12, 41] as [number, number],
+};
 
-const crimeIcon = new Icon({
+const crimeIconOptions = {
   iconUrl: "/red-marker.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  iconSize: [25, 41] as [number, number],
+  iconAnchor: [12, 41] as [number, number],
+};
 
 const CRIME_TYPES = [
   "All",
@@ -70,11 +71,23 @@ export default function CrimeMap() {
   const [zoom, setZoom] = useState(15);
   const [selectedType, setSelectedType] = useState("All");
   const [selectedTime, setSelectedTime] = useState("7d");
+  const [hotspots, setHotspots] = useState<any[]>([]);
+
+  const fetchHotspots = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/crime/clusters`,
+        { withCredentials: true }
+      );
+      setHotspots(res.data.hotspots || []);
+    } catch (err) {
+      console.error("Error fetching hotspots", err);
+    }
+  };
 
   useEffect(() => {
-    const newZoom = Math.max(8, 20 - Math.log10(radius));
-    setZoom(Math.round(newZoom));
-  }, [radius]);
+    fetchHotspots();
+  }, []);
 
   const debouncedFetch = useMemo(
     () =>
@@ -103,6 +116,7 @@ export default function CrimeMap() {
                 id: crime._id,
                 position: [lat, lng],
                 popupContent: <GeneratePopUpContent crime={crime} />,
+                // ensure reported crimes use the red marker icon
                 icon: crimeIcon,
               };
             });
@@ -116,6 +130,16 @@ export default function CrimeMap() {
         },
         500
       ),
+    []
+  );
+
+  const userIcon = useMemo(
+    () => createLeafletIcon(userIconOptions),
+    []
+  );
+
+  const crimeIcon = useMemo(
+    () => createLeafletIcon(crimeIconOptions),
     []
   );
 
@@ -224,6 +248,7 @@ export default function CrimeMap() {
             tileUrl="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             crimeCount={crimeCount}
             radius={radius}
+            hotspots={hotspots}
           />
         )}
       </div>

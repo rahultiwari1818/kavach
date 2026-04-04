@@ -55,7 +55,7 @@ export const registerValidations = (
 
     
     if (!otp) {
-      res.status(ResponseCode.BAD_REQUEST).json({ message: "Password is required" });
+      res.status(ResponseCode.BAD_REQUEST).json({ message: "OTP is required" });
       return;
     }
 
@@ -93,6 +93,7 @@ export const addAdminValidations = (req: Request, res: Response, next: NextFunct
   // If any validation fails
   if (errors.length > 0) {
      res.status(ResponseCode.BAD_REQUEST).json({ success: false, errors });
+     return;
   }
 
   // Sanitize input (trim whitespace)

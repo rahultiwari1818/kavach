@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Icon } from "leaflet";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { createLeafletIcon } from "../Map/leafletHelpers";
 import "leaflet/dist/leaflet.css";
 
 const MapComponent = dynamic(() => import("@/components/Map/Map"), {
@@ -10,11 +10,11 @@ const MapComponent = dynamic(() => import("@/components/Map/Map"), {
 });
 
 
-const markerIcon = new Icon({
+const markerIconOptions = {
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  iconSize: [25, 41] as [number, number],
+  iconAnchor: [12, 41] as [number, number],
+};
 
 export default function CrimeLocationMap({
   location,
@@ -25,6 +25,10 @@ export default function CrimeLocationMap({
 }) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null
+  );
+  const markerIcon = useMemo(
+    () => createLeafletIcon(markerIconOptions),
+    []
   );
 
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function CrimeLocationMap({
         {
           id: "selected-location",
           position: [location.lat, location.lng] as [number, number],
-          icon: markerIcon,
+          icon: markerIcon || undefined,
         },
       ]
     : [];

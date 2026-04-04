@@ -297,8 +297,8 @@ export const changeVerificationStatus = async (req: Request, res: Response) => {
 
     const context = new CrimeVerificationContext(id, crime.verificationStatus,remarks);
 
-    if (status === "verify") await context.getState().verify(remarks);
-    else if (status === "reject") await context.getState().reject(remarks);
+    if (status === "verify") await context.getState().verify(remarks, userId);
+    else if (status === "reject") await context.getState().reject(remarks, userId);
 
     // Emit Audit Event
     appEventEmitter.emit("crime_verification_updated", {
@@ -323,58 +323,54 @@ export const changeVerificationStatus = async (req: Request, res: Response) => {
 
 export const getCrimeClusters = async (req: Request, res: Response) => {
   try {
-    const radiusInMeters = 1000;
-    const minClusterSize = 10;
+    // Grid size: approximately 1km x 1km (0.01 degrees)
+    const gridSize = 0.01;
 
-    const allCrimes = (await CrimeReportModel.find(
-      {},
+    // Get all verified crimes
+    const crimes = await CrimeReportModel.find(
+      { verificationStatus: "verified" },
       { location: 1 }
-    )) as CrimeReport[];
+    );
 
-    const visited = new Set();
-    const clusters: any[] = [];
+    // Group crimes by grid cell
+    const gridMap = new Map<string, { lat: number; lng: number; count: number }>();
 
-    for (let i = 0; i < allCrimes.length; i++) {
-      if (visited.has(allCrimes[i]._id?.toString())) continue;
+    crimes.forEach((crime) => {
+      const lat = crime.location.coordinates[1];
+      const lng = crime.location.coordinates[0];
 
-      const centerCrime = allCrimes[i];
-      const nearbyCrimes = await CrimeReportModel.find({
-        location: {
-          $nearSphere: {
-            $geometry: centerCrime.location,
-            $maxDistance: radiusInMeters,
-          },
-        },
-      });
+      // Round to grid
+      const gridLat = Math.round(lat / gridSize) * gridSize;
+      const gridLng = Math.round(lng / gridSize) * gridSize;
+      const key = `${gridLat},${gridLng}`;
 
-      const clusterCrimes = nearbyCrimes.filter(
-        (c) => !visited.has(c._id.toString())
-      );
-
-      if (clusterCrimes.length >= minClusterSize) {
-        clusterCrimes.forEach((c) => visited.add(c._id.toString()));
-        const avgLat =
-          clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[1], 0) /
-          clusterCrimes.length;
-        const avgLng =
-          clusterCrimes.reduce((sum, c) => sum + c.location.coordinates[0], 0) /
-          clusterCrimes.length;
-
-        clusters.push({
-          center: { lat: avgLat, lng: avgLng },
-          count: clusterCrimes.length,
-          crimes: clusterCrimes.map((c) => ({
-            id: c._id,
-            lat: c.location.coordinates[1],
-            lng: c.location.coordinates[0],
-          })),
-        });
+      if (gridMap.has(key)) {
+        gridMap.get(key)!.count += 1;
+      } else {
+        gridMap.set(key, { lat: gridLat, lng: gridLng, count: 1 });
       }
-    }
+    });
 
-    res.status(200).json({ clusters });
+    // Convert to array and assign colors based on crime count
+    const hotspots = Array.from(gridMap.values()).map((cell) => {
+      let color = "green"; // low
+      if (cell.count >= 16) {
+        color = "red"; // high
+      } else if (cell.count >= 6) {
+        color = "yellow"; // medium
+      }
+
+      return {
+        lat: cell.lat,
+        lng: cell.lng,
+        count: cell.count,
+        color,
+      };
+    });
+
+    res.status(200).json({ hotspots });
   } catch (err) {
-    console.error("Error clustering crimes:", err);
+    console.error("Error generating hotspots:", err);
     res
       .status(ResponseCode.INTERNAL_SERVER_ERROR)
       .json({ error: "Internal Server Error" });

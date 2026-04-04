@@ -3,20 +3,21 @@
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CustomMapProps } from "./types";
 import MapMarkerLayer from "./MapMarkerLayer";
 import MapClickHandler from "./MapClickHandler";
-import { Icon } from "leaflet";
+import { createLeafletIcon } from "./leafletHelpers";
 // import HeatmapLayer from "./HeatMapLayer";
 import RiskZoneLayer from "./RiskZoneLayer";
+import HotspotLayer from "./HotspotLayer";
 import HeatmapLayer from "./HeatMapLayer";
 
-const defaultUserIcon = new Icon({
+const defaultUserIconOptions = {
   iconUrl: "/user-location.png",
-  iconSize: [30, 40],
-  iconAnchor: [15, 40],
-});
+  iconSize: [30, 40] as [number, number],
+  iconAnchor: [15, 40] as [number, number],
+};
 
 function FlyToLocation({ location ,zoom}: { location: [number, number] | null,zoom:number }) {
   const map = useMap();
@@ -41,11 +42,12 @@ function MapComponent({
   draggable = true,
   showZoomControl = true,
   showUserLocation = false,
-  userIcon = defaultUserIcon,
+  userIcon,
   onMapClick,
   heatPoints=[[0,0,0]],
   crimeCount=0,
-  radius=1000
+  radius=1000,
+  hotspots=[]
 }: CustomMapProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null
@@ -68,6 +70,11 @@ function MapComponent({
       );
     }
   }, [showUserLocation]);
+
+  const resolvedUserIcon = useMemo(
+    () => userIcon ?? createLeafletIcon(defaultUserIconOptions),
+    [userIcon]
+  );
 
   const initialCenter = userLocation || center;
 
@@ -94,13 +101,14 @@ function MapComponent({
 
         {/* User Location Marker */}
         {showUserLocation && userLocation && (
-          <Marker position={userLocation} icon={userIcon}>
+          <Marker position={userLocation} icon={resolvedUserIcon}>
             <Popup>Your current location</Popup>
           </Marker>
         )}
 
       {heatPoints && heatPoints.length > 0 && <HeatmapLayer points={heatPoints} />}
         {(crimeCount || crimeCount >=0)  &&   <RiskZoneLayer userLocation={userLocation} crimeCount={crimeCount} radius={radius}/>}
+        {hotspots && hotspots.length > 0 && <HotspotLayer hotspots={hotspots} />}
       </MapContainer>
     </div>
   );

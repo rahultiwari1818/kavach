@@ -14,12 +14,13 @@ export function generateOTP(): string {
 export const sendOTP = async (email: string): Promise<Boolean> => {
   try {
     const otp: string = generateOTP();
-    await client.set(email, otp);
+    await client.set(email, otp, { EX: 60 });
     const resp = await sendMail(
       email,
       "Verification OTP",
       otpHTMLBody(
         `Your OTP is ${otp}.\n
+      This OTP is valid for 1 minute.\n
       Do not Share this with anyone.
       `
       )

@@ -1,4 +1,4 @@
-import { LatLngExpression, Icon } from "leaflet"
+import type { LatLngExpression } from "leaflet"
 import dynamic from "next/dynamic"
 import { ReactNode } from "react"
 
@@ -6,7 +6,7 @@ export interface MapMarker {
   id: string
   position: LatLngExpression
   popupContent?: ReactNode
-  icon?: Icon
+  icon?: any
 }
 
 export interface MapProps {
@@ -17,7 +17,7 @@ export interface MapProps {
   className?: string
   markers?: MapMarker[]
   tileUrl?: string
-  userIcon?: Icon
+  userIcon?: any
   height?: string
   children?: ReactNode
 }

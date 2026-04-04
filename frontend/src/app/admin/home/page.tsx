@@ -2,22 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios, { AxiosError } from "axios";
-import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
-import { Icon } from "leaflet";
 import GeneratePopUpContent from "@/components/Map/GeneratePopUpContent";
+import { createLeafletIcon } from "@/components/Map/leafletHelpers";
 import { Crime } from "@/Types/crime";
 import Overlay from "@/components/Overlay/Overlay";
 import { Slider } from "@mui/material";
 import { debounce } from "@/utils/generalUtils"; // ✅ import your debounce function
+import MapView from "@/components/Map/Map";
 
-const MapView = dynamic(() => import("@/components/Map/Map"), { ssr: false });
-
-const userIcon = new Icon({
+const userIconOptions = {
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  iconSize: [25, 41] as [number, number],
+  iconAnchor: [12, 41] as [number, number],
+};
 
 const CRIME_TYPES = [
   "All",
@@ -68,6 +66,10 @@ export default function AdminCrimesPage() {
   const [selectedStatus, setSelectedStatus] = useState("pending");
   const [radius, setRadius] = useState(1000);
   const [userLocation, setUserLocation] = useState<[number, number]>([0, 0]);
+  const userIcon = useMemo(
+    () => createLeafletIcon(userIconOptions),
+    []
+  );
 
   // ✅ Fetch user's location once
   useEffect(() => {

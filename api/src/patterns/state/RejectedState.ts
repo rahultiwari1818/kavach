@@ -8,11 +8,11 @@ export class RejectedState implements ICrimeVerificationState {
     this.context = context;
   }
 
-  async verify(): Promise<void> {
+  async verify(remark: string, verifiedBy?: string): Promise<void> {
     throw new Error("Cannot verify a rejected crime.");
   }
 
-  async reject(): Promise<void> {
+  async reject(remark: string, verifiedBy?: string): Promise<void> {
     throw new Error("Crime is already rejected.");
   }
 

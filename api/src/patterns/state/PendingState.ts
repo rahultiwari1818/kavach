@@ -10,13 +10,13 @@ export class PendingState implements ICrimeVerificationState {
     this.context = context;
   }
 
-  async verify(remark:string): Promise<void> {
-    await this.context.updateStatusInDB("verified",remark);
+  async verify(remark:string, verifiedBy?: string): Promise<void> {
+    await this.context.updateStatusInDB("verified",remark, verifiedBy);
     this.context.setState(new VerifiedState(this.context));
   }
 
-  async reject(remark:string): Promise<void> {
-    await this.context.updateStatusInDB("rejected",remark);
+  async reject(remark:string, verifiedBy?: string): Promise<void> {
+    await this.context.updateStatusInDB("rejected",remark, verifiedBy);
     this.context.setState(new RejectedState(this.context));
   }
 

@@ -1,11 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const CrimeMap = dynamic(() => import("@/components/CrimeMap/CrimeMap"), {
-  ssr: false,
-});
-
+import CrimeMap from "@/components/CrimeMap/CrimeMap";
 export default function CrimeNearbyPage() {
   return (
     <div>

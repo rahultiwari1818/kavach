@@ -40,28 +40,36 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setIsOpenForgotPasswordDialog(false);
   }, []);
 
+  const [isResendDisabled, setIsResendDisabled] = useState(false);
+
+  const sendOTP = async () => {
+    try {
+      setIsLoading(true);
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/verify-email`,
+        { email },
+        { withCredentials: true }
+      );
+
+      setIsLoading(false);
+      toast.success(res.data.message || "OTP sent to your email.");
+      setIsResendDisabled(true);
+      setTimeout(() => setIsResendDisabled(false), 40000);
+    } catch (err) {
+      const error = err as AxiosError<{ message: string }>;
+      if (error.response) toast.error(error.response.data.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (mode === "register") {
       if (step === "form") {
-        try {
-          setIsLoading(true);
-          const res = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/verify-email`,
-            { email },
-            { withCredentials: true }
-          );
-
-          setIsLoading(false);
-          toast.success(res.data.message || "OTP sent to your email.");
-          setStep("otp");
-        } catch (err) {
-          const error = err as AxiosError<{ message: string }>;
-          if (error.response) toast.error(error.response.data.message);
-        } finally {
-          setIsLoading(false);
-        }
+        await sendOTP();
+        setStep("otp");
         return;
       }
 
@@ -100,6 +108,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         const role = Cookies.get("role");
         if (role === "admin") {
           router.push("/admin/home");
+        } else if (role === "super-admin") {
+          router.push("/super-admin/home");
         } else {
           router.push("/public/home");
         }
@@ -127,6 +137,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         const role = Cookies.get("role");
         if (role === "admin") {
           router.push("/admin/home");
+        } else if (role === "super-admin") {
+          router.push("/super-admin/home");
         } else {
           router.push("/public/home");
         }
@@ -238,6 +250,21 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   : "Verify & Register"
                 : "Sign In"}
             </button>
+
+            {mode === "register" && step === "otp" && (
+              <button
+                type="button"
+                onClick={sendOTP}
+                disabled={isResendDisabled}
+                className={`w-full mt-2 py-2 px-4 font-semibold rounded-xl shadow transition ${
+                  isResendDisabled
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    : "bg-gray-600 text-white hover:bg-gray-700"
+                }`}
+              >
+                {isResendDisabled ? "Resend OTP (Wait 40s)" : "Resend OTP"}
+              </button>
+            )}
           </form>
 
           {mode === "login" && (

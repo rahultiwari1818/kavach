@@ -136,12 +136,12 @@ export const logoutController = async (
     res.clearCookie("authToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
     res.clearCookie("role", {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
     res.status(ResponseCode.SUCCESS).json({
       message: "Logout Successfully.!",
@@ -197,14 +197,14 @@ export const googleAuth = async (
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     res.cookie("role", user.role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     res.status(ResponseCode.SUCCESS).json({
@@ -528,6 +528,6 @@ export const doesUserAlreadyExist = async (email: string): Promise<Boolean> => {
     return user == null ? false : true;
   } catch (error) {
     console.error(" Error while checking doesUserAlreadyExist:", error);
-    return true;
+    throw error; // or return false, but better to throw
   }
 };
