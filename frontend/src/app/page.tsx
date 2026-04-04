@@ -1,9 +1,7 @@
-import Login from "@/components/Login/Login";
+import AuthForm from "@/components/AuthForm/AuthForm";
 
 export default function Home(){
   return(
-    <div>
-      <Login/>
-    </div>
+    <AuthForm mode="login" />
   )
 }

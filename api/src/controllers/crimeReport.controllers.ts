@@ -86,15 +86,15 @@ export const getNearbyCrimes = async (
       return;
     }
 
-    // 🕒 Construct match filter
+    // Construct match filter
     const matchFilter: any = { verificationStatus: "verified" };
 
-    // 🔹 Filter by type (ignore if 'All')
+    // Filter by type (ignore if 'All')
     if (type && type !== "All") {
       matchFilter.type = { $regex: new RegExp(type, "i") };
     }
 
-    // 🔹 Compute time filter
+    // Compute time filter
     const now = new Date();
     const from = new Date();
 
@@ -130,7 +130,7 @@ export const getNearbyCrimes = async (
       matchFilter.datetime = { $gte: from, $lte: now };
     }
 
-    // 📍 Geo + Lookup Aggregation
+    // Geo + Lookup Aggregation
     const crimes = await CrimeReportModel.aggregate([
       {
         $geoNear: {
@@ -186,7 +186,7 @@ export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
   try {
     const crimes = await CrimeReportModel.aggregate([
       {
-        $match: { verificationStatus: "pending" }, // 🔍 only unverified crimes
+        $match: { verificationStatus: "pending" }, // only unverified crimes
       },
       {
         $lookup: {
@@ -200,7 +200,7 @@ export const getAllUnverifiedCrimes = async (req: Request, res: Response) => {
         $unwind: "$reportedBy",
       },
       {
-        $unset: "reportedBy.password", // 🛡️ remove password field
+        $unset: "reportedBy.password", // remove password field
       },
     ]);
 
@@ -219,12 +219,12 @@ export const getAllverifiedCrimes = async (req: Request, res: Response) => {
 
     const matchFilter: any = { verificationStatus: "verified" };
 
-    // 🔹 Filter by type (case-insensitive)
+    // Filter by type (case-insensitive)
     if (type) {
       matchFilter.type = { $regex: new RegExp(type.toString(), "i") };
     }
 
-    // 🔹 Date filter: from 'fromDate' (or last 7 days) to now
+    // Date filter: from 'fromDate' (or last 7 days) to now
     const now = new Date();
     const from =
       fromDate && fromDate !== "all"

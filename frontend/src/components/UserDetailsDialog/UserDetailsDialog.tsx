@@ -21,7 +21,7 @@ export default function UserDetailsDialog({
   const [statusLoading, setStatusLoading] = useState(false);
   const [filterType, setFilterType] = useState("all");
 
-  // ✅ keep localUser synced with incoming prop
+  // keep localUser synced with incoming prop
   useEffect(() => {
     if (user) setLocalUser(user);
   }, [user]);
@@ -62,7 +62,7 @@ export default function UserDetailsDialog({
     }
   };
 
-  // ✅ Only return null *after* all hooks
+  // Only return null *after* all hooks
   if (!localUser) return null;
 
   return (

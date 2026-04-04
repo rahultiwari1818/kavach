@@ -1,7 +1,7 @@
 "use client"
-import SignUp from "@/components/Signup/Signup"
+import AuthForm from "@/components/AuthForm/AuthForm"
 export default function page() {
   return (
-    <SignUp/>
+    <AuthForm mode="register" />
   )
 }

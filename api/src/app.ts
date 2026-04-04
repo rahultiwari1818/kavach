@@ -42,7 +42,7 @@ app.get("/swagger.json", (_req : Request, res : Response) => {
 
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(undefined, {
-  swaggerUrl: "/swagger.json", // ✅ Not a file path!
+  swaggerUrl: "/swagger.json", // Not a file path!
 }));
 
 

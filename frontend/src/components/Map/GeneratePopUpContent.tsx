@@ -20,7 +20,7 @@ export default function GeneratePopUpContent({
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState<number>(0);
 
-  // 🔹 Handle verify/reject
+  // Handle verify/reject
   const handleVerification = async (action: string, remarks: string) => {
     try {
       setIsVerifying(true);
@@ -40,7 +40,7 @@ export default function GeneratePopUpContent({
     }
   };
 
-  // 🔹 Handle media navigation
+  // Handle media navigation
   const handleMediaChange = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setCurrentMediaIndex((prevIndex) =>
@@ -69,7 +69,7 @@ export default function GeneratePopUpContent({
         <b>By:</b> {crime.reportedBy?.name || "Anonymous"}
       </p>
 
-      {/* 🔹 Verification Section */}
+      {/* Verification Section */}
       {crime.verificationStatus === "pending" && (
         <div className="border-t border-gray-200 pt-3 mt-3">
           <p className="text-sm font-medium mb-1 text-gray-700">Verification</p>
@@ -98,7 +98,7 @@ export default function GeneratePopUpContent({
         </div>
       )}
 
-      {/* 🔹 Media Section */}
+      {/* Media Section */}
       {crime.mediaUrl && crime.mediaUrl.length > 0 && (
         <div className="mt-4 border-t border-gray-200 pt-3">
           <p className="text-sm font-medium text-gray-700 mb-2">
@@ -153,7 +153,7 @@ export default function GeneratePopUpContent({
         </div>
       )}
 
-      {/* 🔹 Lightbox Modal for Images/Video */}
+      {/* Lightbox Modal for Images/Video */}
       {selectedMedia && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
