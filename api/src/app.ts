@@ -59,14 +59,13 @@ app.use("/api/v1/crime",crimeRoutes);
 // auditlog route middleware
 app.use("/api/v1/audit-logs",auditRoutes);
 
-
-
-
-
-
-
-
-
-
+// health check endpoint
+app.get("/api/v1/health", (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    message: "Backend server is running"
+  });
+});
 
 export default app;

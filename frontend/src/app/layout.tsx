@@ -6,6 +6,8 @@ import ToastProvider from "@/context/ToastProvider";
 import NavbarWrapper from "@/components/Navbar/NavbarWrapper";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import 'leaflet/dist/leaflet.css';
+import { useEffect } from "react";
+import { startDailyHealthCheck } from "@/utils/healthCheckService";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +24,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    // Initialize daily health check on app startup
+    startDailyHealthCheck();
+  }, []);
+
   return (
     <html>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
